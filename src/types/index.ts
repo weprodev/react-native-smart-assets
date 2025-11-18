@@ -30,6 +30,7 @@ export interface AssetProps<TAssetName extends string = string> {
   size?: AssetSize;
   style?: StyleProp<ImageStyle>;
   tintColor?: string;
+  color?: string;
   resizeMode?: ImageResizeMode;
   category?: AssetCategory;
   variant?: AssetVariant;
