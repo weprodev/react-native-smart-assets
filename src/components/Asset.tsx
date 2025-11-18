@@ -30,6 +30,7 @@ export function Asset<TAssetName extends string = string>({
   size,
   style,
   tintColor,
+  color,
   resizeMode = 'contain',
   testID,
 }: AssetProps<TAssetName>): React.ReactElement | null {
@@ -77,6 +78,7 @@ export function Asset<TAssetName extends string = string>({
         width={typeof size === 'object' ? size.width : sizeValue}
         height={typeof size === 'object' ? size.height : sizeValue}
         tintColor={tintColor}
+        color={color}
         style={style as ImageStyle}
         testID={testID}
       />
