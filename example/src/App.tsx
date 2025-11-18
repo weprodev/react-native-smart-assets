@@ -1,12 +1,11 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'react-native-smart-assets';
-
-const result = multiply(3, 7);
+import { Asset } from 'react-native-smart-assets';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Text>Smart Assets Example</Text>
+      <Asset name="icon" size={48} />
     </View>
   );
 }
