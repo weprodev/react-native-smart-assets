@@ -85,6 +85,125 @@ function MyComponent() {
 }
 ```
 
+## Complete Example
+
+Here's a complete example demonstrating all the key features:
+
+```tsx
+import { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  setAssetRegistry,
+  Asset,
+  useAsset,
+  useAssetPreloader,
+  preloadRemoteAsset,
+  isRemoteUrl,
+} from 'react-native-smart-assets';
+import * as Assets from './assets';
+import type { AssetName } from './assets';
+
+// Initialize the asset registry
+setAssetRegistry(Assets.ASSETS, Assets.ASSET_METADATA);
+
+const REMOTE_ASSET_URLS = [
+  'https://picsum.photos/200/200?random=1',
+  'https://picsum.photos/200/200?random=2',
+];
+
+export default function App() {
+  const [selectedAsset, setSelectedAsset] = useState<AssetName>('icon');
+  const assetInfo = useAsset(selectedAsset);
+  const { preload, progress, isLoading, error } = useAssetPreloader();
+
+  // Preload assets on mount
+  useEffect(() => {
+    preload();
+  }, [preload]);
+
+  const handlePreloadSelected = () => {
+    preload([selectedAsset]);
+  };
+
+  const handlePreloadRemoteAssets = async () => {
+    try {
+      await Promise.allSettled(
+        REMOTE_ASSET_URLS.map((url) => preloadRemoteAsset(url, 10000))
+      );
+    } catch (err) {
+      console.error('Failed to preload remote assets:', err);
+    }
+  };
+
+  return (
+    <ScrollView>
+      {/* Local Asset Selection */}
+      <View>
+        <Text>Select Asset:</Text>
+        {Assets.getAllAssetNames().map((name) => (
+          <TouchableOpacity
+            key={name}
+            onPress={() => setSelectedAsset(name)}
+          >
+            <Text>{name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Display Selected Asset */}
+      <View>
+        <Asset<AssetName> name={selectedAsset} size={64} />
+        <Text>Asset: {selectedAsset}</Text>
+        <Text>Exists: {assetInfo.exists ? 'Yes' : 'No'}</Text>
+        <Text>Is SVG: {assetInfo.isSvg ? 'Yes' : 'No'}</Text>
+      </View>
+
+      {/* Preloader Controls */}
+      <View>
+        <TouchableOpacity
+          onPress={handlePreloadSelected}
+          disabled={isLoading}
+        >
+          <Text>Preload Selected</Text>
+        </TouchableOpacity>
+        
+        <Text>
+          Progress: {progress.loaded} / {progress.total} ({progress.percentage}%)
+        </Text>
+        
+        {isLoading && <Text>Loading...</Text>}
+        {error && <Text>Error: {error.message}</Text>}
+      </View>
+
+      {/* Remote Assets */}
+      <View>
+        <Text>Remote Assets:</Text>
+        {REMOTE_ASSET_URLS.map((url) => (
+          <View key={url}>
+            <Asset name={url} size={48} />
+            <Text>{isRemoteUrl(url) ? 'Remote' : 'Local'}</Text>
+          </View>
+        ))}
+        
+        <TouchableOpacity onPress={handlePreloadRemoteAssets}>
+          <Text>Preload Remote Assets</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Asset Grid */}
+      <View>
+        {Assets.getAllAssetNames().map((name) => (
+          <View key={name}>
+            <Asset<AssetName> name={name} size={48} />
+            <Text>{name}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+```
+
 ## Usage
 
 ### Asset Component
