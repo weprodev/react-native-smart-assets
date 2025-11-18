@@ -13,7 +13,9 @@ import {
   useAssetPreloader,
   preloadRemoteAsset,
   isRemoteUrl,
+  resolveAssetVariant,
 } from '@weprodev/react-native-smart-assets';
+import type { AssetVariant } from '@weprodev/react-native-smart-assets';
 import * as Assets from '../assets';
 import type { AssetName } from '../assets';
 
@@ -42,6 +44,12 @@ export default function App() {
   const [remotePreloadError, setRemotePreloadError] = useState<Error | null>(
     null
   );
+  const [selectedVariant, setSelectedVariant] =
+    useState<AssetVariant>('default');
+  const [selectedDensity, setSelectedDensity] = useState<1 | 2 | 3>(1);
+  const [selectedPlatform, setSelectedPlatform] = useState<
+    'ios' | 'android' | 'web'
+  >('web');
 
   useEffect(() => {
     preload();
@@ -258,6 +266,150 @@ export default function App() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Variants</Text>
+        <Text style={styles.variantDescription}>
+          Support for density variants (@2x, @3x), dark mode, and
+          platform-specific assets
+        </Text>
+
+        <View style={styles.variantControls}>
+          <View style={styles.variantGroup}>
+            <Text style={styles.variantLabel}>Theme Variant:</Text>
+            <View style={styles.variantButtons}>
+              {(['default', 'light', 'dark'] as AssetVariant[]).map(
+                (variant) => (
+                  <TouchableOpacity
+                    key={variant}
+                    style={[
+                      styles.variantButton,
+                      selectedVariant === variant && styles.variantButtonActive,
+                    ]}
+                    onPress={() => setSelectedVariant(variant)}
+                  >
+                    <Text
+                      style={[
+                        styles.variantButtonText,
+                        selectedVariant === variant &&
+                          styles.variantButtonTextActive,
+                      ]}
+                    >
+                      {variant}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
+            </View>
+          </View>
+
+          <View style={styles.variantGroup}>
+            <Text style={styles.variantLabel}>Density:</Text>
+            <View style={styles.variantButtons}>
+              {([1, 2, 3] as const).map((density) => (
+                <TouchableOpacity
+                  key={density}
+                  style={[
+                    styles.variantButton,
+                    selectedDensity === density && styles.variantButtonActive,
+                  ]}
+                  onPress={() => setSelectedDensity(density)}
+                >
+                  <Text
+                    style={[
+                      styles.variantButtonText,
+                      selectedDensity === density &&
+                        styles.variantButtonTextActive,
+                    ]}
+                  >
+                    {density}x
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.variantGroup}>
+            <Text style={styles.variantLabel}>Platform:</Text>
+            <View style={styles.variantButtons}>
+              {(['web', 'ios', 'android'] as const).map((platform) => (
+                <TouchableOpacity
+                  key={platform}
+                  style={[
+                    styles.variantButton,
+                    selectedPlatform === platform && styles.variantButtonActive,
+                  ]}
+                  onPress={() => setSelectedPlatform(platform)}
+                >
+                  <Text
+                    style={[
+                      styles.variantButtonText,
+                      selectedPlatform === platform &&
+                        styles.variantButtonTextActive,
+                    ]}
+                  >
+                    {platform}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.variantExample}>
+          <Text style={styles.variantExampleTitle}>
+            Resolved Variant Names:
+          </Text>
+          {Assets.getAllAssetNames()
+            .slice(0, 3)
+            .map((baseName) => {
+              const resolvedName = resolveAssetVariant(baseName, {
+                variant: selectedVariant,
+                density: selectedDensity,
+                platform: selectedPlatform,
+              });
+              return (
+                <View key={baseName} style={styles.variantExampleItem}>
+                  <Text style={styles.variantExampleBase}>{baseName}</Text>
+                  <Text style={styles.variantExampleArrow}>→</Text>
+                  <Text style={styles.variantExampleResolved}>
+                    {resolvedName}
+                  </Text>
+                </View>
+              );
+            })}
+        </View>
+
+        <View style={styles.variantDemo}>
+          <Text style={styles.variantDemoTitle}>Asset with Variants:</Text>
+          <View style={styles.variantDemoAsset}>
+            <Asset<AssetName>
+              name={selectedAsset}
+              size={64}
+              variant={selectedVariant}
+            />
+            <View style={styles.variantDemoInfo}>
+              <Text style={styles.variantDemoLabel}>Base Name:</Text>
+              <Text style={styles.variantDemoValue}>{selectedAsset}</Text>
+              <Text style={styles.variantDemoLabel}>Variant:</Text>
+              <Text style={styles.variantDemoValue}>{selectedVariant}</Text>
+              <Text style={styles.variantDemoLabel}>Density:</Text>
+              <Text style={styles.variantDemoValue}>{selectedDensity}x</Text>
+              <Text style={styles.variantDemoLabel}>Platform:</Text>
+              <Text style={styles.variantDemoValue}>{selectedPlatform}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.variantInfo}>
+          <Text style={styles.variantInfoTitle}>Variant Resolution Rules:</Text>
+          <Text style={styles.variantInfoText}>
+            • Theme variants: base-dark, base-light{'\n'}• Density variants:
+            base@2x, base@3x{'\n'}• Platform variants: base.ios, base.android
+            {'\n'}• Combined: base-dark.ios@2x
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>All Assets</Text>
         <View style={styles.assetsGrid}>
           {Assets.getAllAssetNames().map((name) => (
@@ -418,5 +570,127 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 8,
     textAlign: 'center',
+  },
+  variantDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  variantControls: {
+    marginBottom: 24,
+  },
+  variantGroup: {
+    marginBottom: 16,
+  },
+  variantLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#333',
+  },
+  variantButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  variantButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 4,
+    backgroundColor: '#e0e0e0',
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  variantButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  variantButtonText: {
+    fontSize: 12,
+    color: '#333',
+    fontWeight: '500',
+  },
+  variantButtonTextActive: {
+    color: '#ffffff',
+  },
+  variantExample: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 16,
+  },
+  variantExampleTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  variantExampleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 8,
+  },
+  variantExampleBase: {
+    fontSize: 12,
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  variantExampleArrow: {
+    fontSize: 12,
+    color: '#999',
+  },
+  variantExampleResolved: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontFamily: 'monospace',
+    fontWeight: '500',
+  },
+  variantDemo: {
+    marginBottom: 16,
+  },
+  variantDemoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#333',
+  },
+  variantDemoAsset: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  variantDemoInfo: {
+    flex: 1,
+  },
+  variantDemoLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  variantDemoValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#333',
+    fontFamily: 'monospace',
+  },
+  variantInfo: {
+    backgroundColor: '#f0f7ff',
+    padding: 12,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007AFF',
+  },
+  variantInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  variantInfoText: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 18,
+    fontFamily: 'monospace',
   },
 });
