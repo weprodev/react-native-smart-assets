@@ -56,8 +56,10 @@ In your app entry point (e.g., `App.tsx` or `index.js`):
 import { setAssetRegistry } from 'react-native-smart-assets';
 import * as Assets from './assets';
 
-setAssetRegistry(Assets.ASSETS);
+setAssetRegistry(Assets.ASSETS, Assets.ASSET_METADATA);
 ```
+
+The `ASSET_METADATA` parameter is optional but recommended as it provides additional information about your assets (type, category, etc.) that can be used for better asset handling and type checking.
 
 ### 4. Use the Asset Component
 
@@ -300,9 +302,13 @@ Preloads assets with progress tracking.
 
 ### Utilities
 
-#### `setAssetRegistry(registry: AssetRegistry)`
+#### `setAssetRegistry(registry: AssetRegistry, metadata?: AssetMetadataMap)`
 
 Initialize the asset registry with generated assets.
+
+**Parameters:**
+- `registry: AssetRegistry` - The asset registry object (typically `Assets.ASSETS`)
+- `metadata?: AssetMetadataMap` - Optional metadata object (typically `Assets.ASSET_METADATA`) containing asset information like type, category, etc.
 
 #### `getAsset(name: string)`
 
