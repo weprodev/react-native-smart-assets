@@ -1,6 +1,11 @@
 import * as path from 'path';
 import type { AssetMetadata } from '../types';
-import { writeFileContent, normalizePath, getRelativePath } from './utils';
+import {
+  writeFileContent,
+  normalizePath,
+  getRelativePath,
+  readFileContent,
+} from './utils';
 import { scanAssetsDirectory } from './scanner';
 import type { ScanResult } from './scanner';
 import { validateAssets } from './validator';
@@ -39,6 +44,13 @@ export function generateAssetRegistry(
 
   const validationResult = validateAssets(scanResult.assets);
 
+  const svgAssets = scanResult.assets.filter((asset) => asset.type === 'svg');
+  const generatedSvgComponents = generateSvgComponents(
+    svgAssets,
+    outputDir,
+    baseDir
+  );
+
   const assetNames = scanResult.assets.map((asset) => asset.name);
   const uniqueNames = Array.from(new Set(assetNames));
 
@@ -48,7 +60,8 @@ export function generateAssetRegistry(
     assetsDir,
     outputDir,
     format,
-    baseDir
+    baseDir,
+    generatedSvgComponents
   );
 
   writeFileContent(outputPath, content);
@@ -74,7 +87,8 @@ function generateRegistryContent(
   _assetsDir: string,
   outputDir: string,
   _format: 'typescript' | 'javascript',
-  _baseDir: string
+  _baseDir: string,
+  generatedSvgComponents: Map<string, string> = new Map()
 ): string {
   const assetNames = assets.map((asset) => {
     return `'${asset.name}'`;
@@ -86,6 +100,13 @@ function generateRegistryContent(
   )};`;
 
   const assetImports = assets.map((asset) => {
+    if (asset.type === 'svg' && generatedSvgComponents.has(asset.name)) {
+      const componentPath = generatedSvgComponents.get(asset.name);
+      const relativePath = getRelativePath(outputDir, componentPath!);
+      const normalizedPath = normalizePath(relativePath);
+      const requirePath = ensureRelativePathPrefix(normalizedPath);
+      return `  '${asset.name}': require('${requirePath}'),`;
+    }
     const relativePath = getRelativePath(outputDir, asset.path);
     const normalizedPath = normalizePath(relativePath);
     const requirePath = ensureRelativePathPrefix(normalizedPath);
@@ -151,4 +172,195 @@ function generateMetadataContent(assets: AssetMetadata[]): string {
   return `export const ASSET_METADATA = {\n${metadataEntries.join(
     '\n'
   )}\n} as const;`;
+}
+
+function generateSvgComponents(
+  svgAssets: AssetMetadata[],
+  outputDir: string,
+  _baseDir: string
+): Map<string, string> {
+  const generatedComponents = new Map<string, string>();
+  const svgComponentsDir = path.join(outputDir, 'svg-components');
+
+  for (const asset of svgAssets) {
+    try {
+      const svgContent = readFileContent(asset.path);
+      const componentName = toPascalCase(asset.name);
+      const componentCode = transformSvgToComponent(svgContent, componentName);
+
+      const componentFileName = `${asset.name}.tsx`;
+      const componentPath = path.join(svgComponentsDir, componentFileName);
+
+      writeFileContent(componentPath, componentCode);
+      generatedComponents.set(asset.name, componentPath);
+    } catch (error) {
+      console.warn(
+        `Failed to generate component for ${asset.name}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  return generatedComponents;
+}
+
+function transformSvgToComponent(
+  svgContent: string,
+  componentName: string
+): string {
+  let transformedSvg = svgContent.trim();
+  const usedComponents = new Set<string>();
+
+  const widthMatch = transformedSvg.match(/width="([^"]*)"/);
+  const heightMatch = transformedSvg.match(/height="([^"]*)"/);
+  const viewBoxMatch = transformedSvg.match(/viewBox="([^"]*)"/);
+
+  const defaultWidth = widthMatch ? widthMatch[1] : '24';
+  const defaultHeight = heightMatch ? heightMatch[1] : '24';
+  const viewBox = viewBoxMatch
+    ? viewBoxMatch[1]
+    : `0 0 ${defaultWidth} ${defaultHeight}`;
+
+  transformedSvg = transformedSvg.replace(
+    /<svg[^>]*>/,
+    `<Svg
+    width={props.width || ${defaultWidth}}
+    height={props.height || ${defaultHeight}}
+    viewBox="${viewBox}"
+  
+    {...props}
+  >`
+  );
+
+  transformedSvg = transformedSvg.replace('</svg>', '</Svg>');
+
+  transformedSvg = transformedSvg.replace(
+    /<path([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Path');
+      return transformElementAttributes('Path', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(/<path([^>]*)>/g, (_match, attrs) => {
+    usedComponents.add('Path');
+    return transformElementAttributes('Path', attrs, false);
+  });
+
+  transformedSvg = transformedSvg.replace(
+    /<circle([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Circle');
+      return transformElementAttributes('Circle', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(
+    /<rect([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Rect');
+      return transformElementAttributes('Rect', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(
+    /<polygon([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Polygon');
+      return transformElementAttributes('Polygon', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(
+    /<polyline([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Polyline');
+      return transformElementAttributes('Polyline', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(
+    /<line([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Line');
+      return transformElementAttributes('Line', attrs, true);
+    }
+  );
+
+  transformedSvg = transformedSvg.replace(
+    /<ellipse([^>]*)\/>/g,
+    (_match, attrs) => {
+      usedComponents.add('Ellipse');
+      return transformElementAttributes('Ellipse', attrs, true);
+    }
+  );
+
+  const hasG = /<g[^>]*>/.test(svgContent);
+  if (hasG) {
+    usedComponents.add('G');
+    transformedSvg = transformedSvg.replace(/<g([^>]*)>/g, '<G$1>');
+    transformedSvg = transformedSvg.replace('</g>', '</G>');
+  }
+
+  const importComponents = Array.from(usedComponents).sort().join(', ');
+  const importStatement =
+    importComponents.length > 0
+      ? `import Svg, { ${importComponents} } from 'react-native-svg';`
+      : 'import Svg from "react-native-svg";';
+
+  return `${importStatement}
+
+interface ${componentName}Props {
+  width?: number | string;
+  height?: number | string;
+  fill?: string;
+  color?: string;
+  stroke?: string;
+  [key: string]: unknown;
+}
+
+export const ${componentName} = (props: ${componentName}Props) => (
+  ${transformedSvg}
+);
+
+export default ${componentName};
+`;
+}
+
+function transformElementAttributes(
+  elementName: string,
+  attributes: string,
+  isSelfClosing: boolean
+): string {
+  let transformedAttrs = attributes.trim();
+
+  const fillMatch = transformedAttrs.match(/fill="([^"]*)"/);
+  if (fillMatch && fillMatch[1] !== 'none') {
+    transformedAttrs = transformedAttrs.replace(
+      /fill="[^"]*"/,
+      "fill={props.fill || props.color || 'currentColor'}"
+    );
+  } else if (!fillMatch) {
+    transformedAttrs += " fill={props.fill || props.color || 'currentColor'}";
+  }
+
+  const strokeMatch = transformedAttrs.match(/stroke="([^"]*)"/);
+  if (strokeMatch && strokeMatch[1] !== 'none') {
+    transformedAttrs = transformedAttrs.replace(
+      /stroke="[^"]*"/,
+      "stroke={props.stroke || props.color || 'currentColor'}"
+    );
+  }
+
+  return isSelfClosing
+    ? `<${elementName}${transformedAttrs ? ' ' + transformedAttrs : ''} />`
+    : `<${elementName}${transformedAttrs ? ' ' + transformedAttrs : ''}>`;
+}
+
+function toPascalCase(str: string): string {
+  return str
+    .split(/[-_\s]/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
 }
