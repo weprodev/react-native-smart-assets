@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
 } from 'react-native';
 import {
   setAssetRegistry,
@@ -97,330 +98,342 @@ export default function App() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Smart Assets Example</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <Text style={styles.title}>Smart Assets Example</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>useAsset Hook</Text>
-        <View style={styles.assetSelector}>
-          {Assets.getAllAssetNames().map((name) => (
-            <TouchableOpacity
-              key={name}
-              style={[
-                styles.assetButton,
-                selectedAsset === name && styles.assetButtonActive,
-              ]}
-              onPress={() => setSelectedAsset(name)}
-            >
-              <Text
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>useAsset Hook</Text>
+          <View style={styles.assetSelector}>
+            {Assets.getAllAssetNames().map((name) => (
+              <TouchableOpacity
+                key={name}
                 style={[
-                  styles.assetButtonText,
-                  selectedAsset === name && styles.assetButtonTextActive,
+                  styles.assetButton,
+                  selectedAsset === name && styles.assetButtonActive,
                 ]}
+                onPress={() => setSelectedAsset(name)}
               >
-                {name}
+                <Text
+                  style={[
+                    styles.assetButtonText,
+                    selectedAsset === name && styles.assetButtonTextActive,
+                  ]}
+                >
+                  {name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.assetInfo}>
+            <Asset<AssetName> name={selectedAsset} size={64} />
+            <View style={styles.infoText}>
+              <Text style={styles.infoLabel}>Asset Name:</Text>
+              <Text style={styles.infoValue}>{selectedAsset}</Text>
+              <Text style={styles.infoLabel}>Exists:</Text>
+              <Text style={styles.infoValue}>
+                {assetInfo.exists ? 'Yes' : 'No'}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.assetInfo}>
-          <Asset<AssetName> name={selectedAsset} size={64} />
-          <View style={styles.infoText}>
-            <Text style={styles.infoLabel}>Asset Name:</Text>
-            <Text style={styles.infoValue}>{selectedAsset}</Text>
-            <Text style={styles.infoLabel}>Exists:</Text>
-            <Text style={styles.infoValue}>
-              {assetInfo.exists ? 'Yes' : 'No'}
-            </Text>
-            <Text style={styles.infoLabel}>Is SVG:</Text>
-            <Text style={styles.infoValue}>
-              {assetInfo.isSvg ? 'Yes' : 'No'}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>useAssetPreloader Hook</Text>
-        <View style={styles.preloaderControls}>
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handlePreloadAll}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>Preload All Assets</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handlePreloadSelected}
-            disabled={isLoading}
-          >
-            <Text style={styles.buttonText}>Preload Selected</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressLabel}>Progress:</Text>
-          <Text style={styles.progressText}>
-            {progress.loaded} / {progress.total} ({progress.percentage}%)
-          </Text>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${progress.percentage}%` },
-              ]}
-            />
-          </View>
-          {isLoading && <Text style={styles.statusText}>Loading...</Text>}
-          {error && (
-            <Text style={styles.errorText}>Error: {error.message}</Text>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Remote Assets</Text>
-        <View style={styles.remoteAssetSelector}>
-          {REMOTE_ASSET_URLS.map((url) => (
-            <TouchableOpacity
-              key={url}
-              style={[
-                styles.assetButton,
-                selectedRemoteUrl === url && styles.assetButtonActive,
-              ]}
-              onPress={() => setSelectedRemoteUrl(url)}
-            >
-              <Text
-                style={[
-                  styles.assetButtonText,
-                  selectedRemoteUrl === url && styles.assetButtonTextActive,
-                ]}
-                numberOfLines={1}
-              >
-                {url.length > 30 ? `${url.substring(0, 30)}...` : url}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.assetInfo}>
-          <Asset name={selectedRemoteUrl} size={64} />
-          <View style={styles.infoText}>
-            <Text style={styles.infoLabel}>Remote URL:</Text>
-            <Text style={styles.infoValue} numberOfLines={2}>
-              {selectedRemoteUrl}
-            </Text>
-            <Text style={styles.infoLabel}>Is Remote:</Text>
-            <Text style={styles.infoValue}>
-              {isRemoteUrl(selectedRemoteUrl) ? 'Yes' : 'No'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.preloaderControls}>
-          <TouchableOpacity
-            style={[styles.button, isPreloadingRemote && styles.buttonDisabled]}
-            onPress={handlePreloadRemoteAssets}
-            disabled={isPreloadingRemote}
-          >
-            <Text style={styles.buttonText}>Preload Remote Assets</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressLabel}>Progress:</Text>
-          <Text style={styles.progressText}>
-            {remotePreloadProgress.loaded} / {remotePreloadProgress.total} (
-            {remotePreloadProgress.percentage}%)
-          </Text>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${remotePreloadProgress.percentage}%` },
-              ]}
-            />
-          </View>
-          {isPreloadingRemote && (
-            <Text style={styles.statusText}>Loading...</Text>
-          )}
-          {remotePreloadError && (
-            <Text style={styles.errorText}>
-              Error: {remotePreloadError.message}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.assetsGrid}>
-          {REMOTE_ASSET_URLS.map((url) => (
-            <View key={url} style={styles.assetCard}>
-              <Asset name={url} size={48} />
-              <Text style={styles.assetCardText} numberOfLines={2}>
-                Remote
+              <Text style={styles.infoLabel}>Is SVG:</Text>
+              <Text style={styles.infoValue}>
+                {assetInfo.isSvg ? 'Yes' : 'No'}
               </Text>
             </View>
-          ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Variants</Text>
-        <Text style={styles.variantDescription}>
-          Support for density variants (@2x, @3x), dark mode, and
-          platform-specific assets
-        </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>useAssetPreloader Hook</Text>
+          <View style={styles.preloaderControls}>
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handlePreloadAll}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>Preload All Assets</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handlePreloadSelected}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>Preload Selected</Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.variantControls}>
-          <View style={styles.variantGroup}>
-            <Text style={styles.variantLabel}>Theme Variant:</Text>
-            <View style={styles.variantButtons}>
-              {(['default', 'light', 'dark'] as AssetVariant[]).map(
-                (variant) => (
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressLabel}>Progress:</Text>
+            <Text style={styles.progressText}>
+              {progress.loaded} / {progress.total} ({progress.percentage}%)
+            </Text>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progress.percentage}%` },
+                ]}
+              />
+            </View>
+            {isLoading && <Text style={styles.statusText}>Loading...</Text>}
+            {error && (
+              <Text style={styles.errorText}>Error: {error.message}</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Remote Assets</Text>
+          <View style={styles.remoteAssetSelector}>
+            {REMOTE_ASSET_URLS.map((url) => (
+              <TouchableOpacity
+                key={url}
+                style={[
+                  styles.assetButton,
+                  selectedRemoteUrl === url && styles.assetButtonActive,
+                ]}
+                onPress={() => setSelectedRemoteUrl(url)}
+              >
+                <Text
+                  style={[
+                    styles.assetButtonText,
+                    selectedRemoteUrl === url && styles.assetButtonTextActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {url.length > 30 ? `${url.substring(0, 30)}...` : url}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.assetInfo}>
+            <Asset name={selectedRemoteUrl} size={64} />
+            <View style={styles.infoText}>
+              <Text style={styles.infoLabel}>Remote URL:</Text>
+              <Text style={styles.infoValue} numberOfLines={2}>
+                {selectedRemoteUrl}
+              </Text>
+              <Text style={styles.infoLabel}>Is Remote:</Text>
+              <Text style={styles.infoValue}>
+                {isRemoteUrl(selectedRemoteUrl) ? 'Yes' : 'No'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.preloaderControls}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                isPreloadingRemote && styles.buttonDisabled,
+              ]}
+              onPress={handlePreloadRemoteAssets}
+              disabled={isPreloadingRemote}
+            >
+              <Text style={styles.buttonText}>Preload Remote Assets</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressLabel}>Progress:</Text>
+            <Text style={styles.progressText}>
+              {remotePreloadProgress.loaded} / {remotePreloadProgress.total} (
+              {remotePreloadProgress.percentage}%)
+            </Text>
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${remotePreloadProgress.percentage}%` },
+                ]}
+              />
+            </View>
+            {isPreloadingRemote && (
+              <Text style={styles.statusText}>Loading...</Text>
+            )}
+            {remotePreloadError && (
+              <Text style={styles.errorText}>
+                Error: {remotePreloadError.message}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.assetsGrid}>
+            {REMOTE_ASSET_URLS.map((url) => (
+              <View key={url} style={styles.assetCard}>
+                <Asset name={url} size={48} />
+                <Text style={styles.assetCardText} numberOfLines={2}>
+                  Remote
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Variants</Text>
+          <Text style={styles.variantDescription}>
+            Support for density variants (@2x, @3x), dark mode, and
+            platform-specific assets
+          </Text>
+
+          <View style={styles.variantControls}>
+            <View style={styles.variantGroup}>
+              <Text style={styles.variantLabel}>Theme Variant:</Text>
+              <View style={styles.variantButtons}>
+                {(['default', 'light', 'dark'] as AssetVariant[]).map(
+                  (variant) => (
+                    <TouchableOpacity
+                      key={variant}
+                      style={[
+                        styles.variantButton,
+                        selectedVariant === variant &&
+                          styles.variantButtonActive,
+                      ]}
+                      onPress={() => setSelectedVariant(variant)}
+                    >
+                      <Text
+                        style={[
+                          styles.variantButtonText,
+                          selectedVariant === variant &&
+                            styles.variantButtonTextActive,
+                        ]}
+                      >
+                        {variant}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                )}
+              </View>
+            </View>
+
+            <View style={styles.variantGroup}>
+              <Text style={styles.variantLabel}>Density:</Text>
+              <View style={styles.variantButtons}>
+                {([1, 2, 3] as const).map((density) => (
                   <TouchableOpacity
-                    key={variant}
+                    key={density}
                     style={[
                       styles.variantButton,
-                      selectedVariant === variant && styles.variantButtonActive,
+                      selectedDensity === density && styles.variantButtonActive,
                     ]}
-                    onPress={() => setSelectedVariant(variant)}
+                    onPress={() => setSelectedDensity(density)}
                   >
                     <Text
                       style={[
                         styles.variantButtonText,
-                        selectedVariant === variant &&
+                        selectedDensity === density &&
                           styles.variantButtonTextActive,
                       ]}
                     >
-                      {variant}
+                      {density}x
                     </Text>
                   </TouchableOpacity>
-                )
-              )}
+                ))}
+              </View>
             </View>
-          </View>
 
-          <View style={styles.variantGroup}>
-            <Text style={styles.variantLabel}>Density:</Text>
-            <View style={styles.variantButtons}>
-              {([1, 2, 3] as const).map((density) => (
-                <TouchableOpacity
-                  key={density}
-                  style={[
-                    styles.variantButton,
-                    selectedDensity === density && styles.variantButtonActive,
-                  ]}
-                  onPress={() => setSelectedDensity(density)}
-                >
-                  <Text
+            <View style={styles.variantGroup}>
+              <Text style={styles.variantLabel}>Platform:</Text>
+              <View style={styles.variantButtons}>
+                {(['web', 'ios', 'android'] as const).map((platform) => (
+                  <TouchableOpacity
+                    key={platform}
                     style={[
-                      styles.variantButtonText,
-                      selectedDensity === density &&
-                        styles.variantButtonTextActive,
-                    ]}
-                  >
-                    {density}x
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.variantGroup}>
-            <Text style={styles.variantLabel}>Platform:</Text>
-            <View style={styles.variantButtons}>
-              {(['web', 'ios', 'android'] as const).map((platform) => (
-                <TouchableOpacity
-                  key={platform}
-                  style={[
-                    styles.variantButton,
-                    selectedPlatform === platform && styles.variantButtonActive,
-                  ]}
-                  onPress={() => setSelectedPlatform(platform)}
-                >
-                  <Text
-                    style={[
-                      styles.variantButtonText,
+                      styles.variantButton,
                       selectedPlatform === platform &&
-                        styles.variantButtonTextActive,
+                        styles.variantButtonActive,
                     ]}
+                    onPress={() => setSelectedPlatform(platform)}
                   >
-                    {platform}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.variantButtonText,
+                        selectedPlatform === platform &&
+                          styles.variantButtonTextActive,
+                      ]}
+                    >
+                      {platform}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
+          </View>
+
+          <View style={styles.variantExample}>
+            <Text style={styles.variantExampleTitle}>
+              Resolved Variant Names:
+            </Text>
+            {Assets.getAllAssetNames()
+              .slice(0, 3)
+              .map((baseName) => {
+                const resolvedName = resolveAssetVariant(baseName, {
+                  variant: selectedVariant,
+                  density: selectedDensity,
+                  platform: selectedPlatform,
+                });
+                return (
+                  <View key={baseName} style={styles.variantExampleItem}>
+                    <Text style={styles.variantExampleBase}>{baseName}</Text>
+                    <Text style={styles.variantExampleArrow}>→</Text>
+                    <Text style={styles.variantExampleResolved}>
+                      {resolvedName}
+                    </Text>
+                  </View>
+                );
+              })}
+          </View>
+
+          <View style={styles.variantDemo}>
+            <Text style={styles.variantDemoTitle}>Asset with Variants:</Text>
+            <View style={styles.variantDemoAsset}>
+              <Asset<AssetName>
+                name={selectedAsset}
+                size={64}
+                variant={selectedVariant}
+              />
+              <View style={styles.variantDemoInfo}>
+                <Text style={styles.variantDemoLabel}>Base Name:</Text>
+                <Text style={styles.variantDemoValue}>{selectedAsset}</Text>
+                <Text style={styles.variantDemoLabel}>Variant:</Text>
+                <Text style={styles.variantDemoValue}>{selectedVariant}</Text>
+                <Text style={styles.variantDemoLabel}>Density:</Text>
+                <Text style={styles.variantDemoValue}>{selectedDensity}x</Text>
+                <Text style={styles.variantDemoLabel}>Platform:</Text>
+                <Text style={styles.variantDemoValue}>{selectedPlatform}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.variantInfo}>
+            <Text style={styles.variantInfoTitle}>
+              Variant Resolution Rules:
+            </Text>
+            <Text style={styles.variantInfoText}>
+              • Theme variants: base-dark, base-light{'\n'}• Density variants:
+              base@2x, base@3x{'\n'}• Platform variants: base.ios, base.android
+              {'\n'}• Combined: base-dark.ios@2x
+            </Text>
           </View>
         </View>
 
-        <View style={styles.variantExample}>
-          <Text style={styles.variantExampleTitle}>
-            Resolved Variant Names:
-          </Text>
-          {Assets.getAllAssetNames()
-            .slice(0, 3)
-            .map((baseName) => {
-              const resolvedName = resolveAssetVariant(baseName, {
-                variant: selectedVariant,
-                density: selectedDensity,
-                platform: selectedPlatform,
-              });
-              return (
-                <View key={baseName} style={styles.variantExampleItem}>
-                  <Text style={styles.variantExampleBase}>{baseName}</Text>
-                  <Text style={styles.variantExampleArrow}>→</Text>
-                  <Text style={styles.variantExampleResolved}>
-                    {resolvedName}
-                  </Text>
-                </View>
-              );
-            })}
-        </View>
-
-        <View style={styles.variantDemo}>
-          <Text style={styles.variantDemoTitle}>Asset with Variants:</Text>
-          <View style={styles.variantDemoAsset}>
-            <Asset<AssetName>
-              name={selectedAsset}
-              size={64}
-              variant={selectedVariant}
-            />
-            <View style={styles.variantDemoInfo}>
-              <Text style={styles.variantDemoLabel}>Base Name:</Text>
-              <Text style={styles.variantDemoValue}>{selectedAsset}</Text>
-              <Text style={styles.variantDemoLabel}>Variant:</Text>
-              <Text style={styles.variantDemoValue}>{selectedVariant}</Text>
-              <Text style={styles.variantDemoLabel}>Density:</Text>
-              <Text style={styles.variantDemoValue}>{selectedDensity}x</Text>
-              <Text style={styles.variantDemoLabel}>Platform:</Text>
-              <Text style={styles.variantDemoValue}>{selectedPlatform}</Text>
-            </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>All Assets</Text>
+          <View style={styles.assetsGrid}>
+            {Assets.getAllAssetNames().map((name) => (
+              <View key={name} style={styles.assetCard}>
+                <Asset<AssetName> name={name} size={48} />
+                <Text style={styles.assetCardText}>{name}</Text>
+              </View>
+            ))}
           </View>
         </View>
-
-        <View style={styles.variantInfo}>
-          <Text style={styles.variantInfoTitle}>Variant Resolution Rules:</Text>
-          <Text style={styles.variantInfoText}>
-            • Theme variants: base-dark, base-light{'\n'}• Density variants:
-            base@2x, base@3x{'\n'}• Platform variants: base.ios, base.android
-            {'\n'}• Combined: base-dark.ios@2x
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>All Assets</Text>
-        <View style={styles.assetsGrid}>
-          {Assets.getAllAssetNames().map((name) => (
-            <View key={name} style={styles.assetCard}>
-              <Asset<AssetName> name={name} size={48} />
-              <Text style={styles.assetCardText}>{name}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
