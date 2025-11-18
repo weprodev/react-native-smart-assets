@@ -15,14 +15,14 @@ try {
 
 const Image = ExpoImage || RNImage;
 
-export function Asset({
+export function Asset<TAssetName extends string = string>({
   name,
   size,
   style,
   tintColor,
   resizeMode = 'contain',
   testID,
-}: AssetProps): React.ReactElement | null {
+}: AssetProps<TAssetName>): React.ReactElement | null {
   if (isRemoteUrl(name)) {
     const { uri, fallback } = resolveRemoteAsset({
       url: name,
