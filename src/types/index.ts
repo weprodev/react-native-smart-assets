@@ -15,8 +15,8 @@ export type AssetCategory = 'images' | 'icons' | 'assets';
 
 export type AssetSource = ImageSourcePropType | string | { uri: string };
 
-export interface AssetProps {
-  name: string;
+export interface AssetProps<TAssetName extends string = string> {
+  name: TAssetName;
   size?: AssetSize;
   style?: StyleProp<ImageStyle>;
   tintColor?: string;
