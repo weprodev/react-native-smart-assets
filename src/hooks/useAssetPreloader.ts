@@ -13,7 +13,6 @@ type ExpoImagePrefetch = (
 
 let expoImagePrefetch: ExpoImagePrefetch | null = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const expoImage = require('expo-image');
   expoImagePrefetch = expoImage.prefetch || expoImage.Image?.prefetch;
 } catch {
@@ -103,11 +102,11 @@ export function useAssetPreloader(
 
         await Promise.all(preloadPromises);
       } catch (preloadErr) {
-        const error =
+        const preloadError =
           preloadErr instanceof Error
             ? preloadErr
             : new Error('Preload failed');
-        setError(error);
+        setError(preloadError);
       } finally {
         setIsLoading(false);
       }
