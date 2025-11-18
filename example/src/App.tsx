@@ -9,11 +9,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text>Smart Assets Example</Text>
-      <Asset<AssetName>
-        name="support"
-        size={48}
-        style={{ backgroundColor: 'red' }}
-      />
+      <Asset<AssetName> name="favicon" size={32} />
     </View>
   );
 }
