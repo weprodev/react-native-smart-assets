@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { getAsset, hasAsset } from '../utils/assetRegistry';
+import { getAsset, hasAsset, isSvgAsset } from '../utils/assetRegistry';
 
 export function useAsset(name: string) {
   return useMemo(() => {
@@ -9,7 +9,7 @@ export function useAsset(name: string) {
     return {
       asset,
       exists,
-      isSvg: name.endsWith('.svg') || name.toLowerCase().includes('.svg'),
+      isSvg: isSvgAsset(name),
     };
   }, [name]);
 }
