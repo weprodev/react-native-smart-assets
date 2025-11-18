@@ -1,7 +1,16 @@
-// @ts-expect-error - testing library not installed in dev dependencies
 import { render } from '@testing-library/react-native';
 import { Asset } from '../components/Asset';
 import { setAssetRegistry } from '../utils/assetRegistry';
+
+// Suppress console warnings in tests
+const originalWarn = console.warn;
+beforeAll(() => {
+  console.warn = jest.fn();
+});
+
+afterAll(() => {
+  console.warn = originalWarn;
+});
 
 describe('Asset', () => {
   beforeEach(() => {
@@ -38,7 +47,10 @@ describe('Asset', () => {
       <Asset name="test" size={50} testID="asset" />
     );
     const image = getByTestId('asset');
-    expect(image.props.style).toMatchObject({
+    const style = Array.isArray(image.props.style)
+      ? image.props.style[0]
+      : image.props.style;
+    expect(style).toMatchObject({
       width: 50,
       height: 50,
     });
@@ -54,7 +66,10 @@ describe('Asset', () => {
       <Asset name="test" size={{ width: 100, height: 200 }} testID="asset" />
     );
     const image = getByTestId('asset');
-    expect(image.props.style).toMatchObject({
+    const style = Array.isArray(image.props.style)
+      ? image.props.style[0]
+      : image.props.style;
+    expect(style).toMatchObject({
       width: 100,
       height: 200,
     });
