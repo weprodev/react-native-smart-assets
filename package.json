@@ -4,6 +4,7 @@
   "description": "A smart assets package to loads images and icons smartly",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
+  "bin": "./lib/module/cli/index.js",
   "exports": {
     ".": {
       "source": "./src/index.tsx",
@@ -67,6 +68,7 @@
     "@react-native/eslint-config": "^0.81.1",
     "@release-it/conventional-changelog": "^10.0.1",
     "@types/jest": "^29.5.14",
+    "@types/node": "^20.0.0",
     "@types/react": "^19.1.12",
     "commitlint": "^19.8.1",
     "del-cli": "^6.0.0",
@@ -84,7 +86,13 @@
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "expo-image": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "expo-image": {
+      "optional": true
+    }
   },
   "workspaces": [
     "example"
