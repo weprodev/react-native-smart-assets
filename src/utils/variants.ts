@@ -39,7 +39,8 @@ export function getDensityVariant(
 }
 
 export function extractBaseName(fileName: string): string {
-  return fileName
+  const withoutExtension = fileName.replace(/\.[^.]+$/, '');
+  return withoutExtension
     .replace(/@\d+x$/, '')
     .replace(/\.(ios|android)$/, '')
     .replace(/-dark$/, '')
