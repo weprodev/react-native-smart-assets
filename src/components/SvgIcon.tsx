@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import type { ImageStyle } from 'react-native';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactElement } from 'react';
 import type { AssetSource } from '../types';
 
 interface SvgIconProps {
@@ -9,6 +9,7 @@ interface SvgIconProps {
   width?: number;
   height?: number;
   tintColor?: string;
+  color?: string;
   style?: ImageStyle;
   testID?: string;
 }
@@ -53,11 +54,47 @@ function getSvgComponent(source: AssetSource): ComponentType<{
   return null;
 }
 
+function applyFillToChildren(
+  element: ReactElement,
+  fillColor: string
+): ReactElement {
+  if (!React.isValidElement(element)) {
+    return element;
+  }
+
+  const elementProps = element.props as {
+    children?: unknown;
+    fill?: string;
+    [key: string]: unknown;
+  };
+
+  const processedChildren = elementProps.children
+    ? React.Children.map(elementProps.children, (child) => {
+        if (React.isValidElement(child)) {
+          return applyFillToChildren(child, fillColor);
+        }
+        return child;
+      })
+    : undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { fill: _oldFill, children: _oldChildren, ...restProps } = elementProps;
+
+  const newProps = {
+    ...restProps,
+    fill: fillColor,
+    ...(processedChildren && { children: processedChildren }),
+  };
+
+  return React.cloneElement(element, newProps as Partial<unknown>);
+}
+
 export function SvgIcon({
   source,
   width,
   height,
   tintColor,
+  color,
   style,
   testID,
 }: SvgIconProps): React.ReactElement | null {
@@ -71,6 +108,22 @@ export function SvgIcon({
   }
 
   const size = width || height || 24;
+  const svgColor = color || tintColor;
+
+  const svgElement = svgColor ? (
+    <SvgComponent
+      width={width || size}
+      height={height || size}
+      fill={svgColor}
+      color={svgColor}
+    />
+  ) : (
+    <SvgComponent width={width || size} height={height || size} />
+  );
+
+  const coloredSvg = svgColor
+    ? applyFillToChildren(svgElement, svgColor)
+    : svgElement;
 
   return (
     <View
@@ -81,12 +134,7 @@ export function SvgIcon({
       ]}
       testID={testID}
     >
-      <SvgComponent
-        width={width || size}
-        height={height || size}
-        fill={tintColor}
-        color={tintColor}
-      />
+      {coloredSvg}
     </View>
   );
 }
