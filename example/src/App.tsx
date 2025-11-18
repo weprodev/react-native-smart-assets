@@ -11,17 +11,38 @@ import {
   Asset,
   useAsset,
   useAssetPreloader,
+  preloadRemoteAsset,
+  isRemoteUrl,
 } from '@weprodev/react-native-smart-assets';
 import * as Assets from '../assets';
 import type { AssetName } from '../assets';
 
 setAssetRegistry(Assets.ASSETS, Assets.ASSET_METADATA);
 
+const REMOTE_ASSET_URLS = [
+  'https://picsum.photos/200/200?random=1',
+  'https://picsum.photos/200/200?random=2',
+  'https://picsum.photos/200/200?random=3',
+  'https://picsum.photos/200/200?random=4',
+];
+
 export default function App() {
   const [selectedAsset, setSelectedAsset] = useState<AssetName>('favicon');
   const assetInfo = useAsset(selectedAsset);
   const { preload, progress, isLoading, error } = useAssetPreloader();
-  console.log('assetInfo', assetInfo);
+  const [selectedRemoteUrl, setSelectedRemoteUrl] = useState<string>(
+    REMOTE_ASSET_URLS[0] || ''
+  );
+  const [remotePreloadProgress, setRemotePreloadProgress] = useState({
+    loaded: 0,
+    total: 0,
+    percentage: 0,
+  });
+  const [isPreloadingRemote, setIsPreloadingRemote] = useState(false);
+  const [remotePreloadError, setRemotePreloadError] = useState<Error | null>(
+    null
+  );
+
   useEffect(() => {
     preload();
   }, [preload]);
@@ -32,6 +53,39 @@ export default function App() {
 
   const handlePreloadSelected = () => {
     preload([selectedAsset]);
+  };
+
+  const handlePreloadRemoteAssets = async () => {
+    setIsPreloadingRemote(true);
+    setRemotePreloadError(null);
+    setRemotePreloadProgress({
+      loaded: 0,
+      total: REMOTE_ASSET_URLS.length,
+      percentage: 0,
+    });
+
+    try {
+      const preloadPromises = REMOTE_ASSET_URLS.map((url) =>
+        preloadRemoteAsset(url, 10000)
+      );
+
+      const results = await Promise.allSettled(preloadPromises);
+      const loaded = results.filter(
+        (r) => r.status === 'fulfilled' && r.value
+      ).length;
+
+      setRemotePreloadProgress({
+        loaded,
+        total: REMOTE_ASSET_URLS.length,
+        percentage: Math.round((loaded / REMOTE_ASSET_URLS.length) * 100),
+      });
+    } catch (err) {
+      const preloadError =
+        err instanceof Error ? err : new Error('Remote preload failed');
+      setRemotePreloadError(preloadError);
+    } finally {
+      setIsPreloadingRemote(false);
+    }
   };
 
   return (
@@ -119,6 +173,91 @@ export default function App() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Remote Assets</Text>
+        <View style={styles.remoteAssetSelector}>
+          {REMOTE_ASSET_URLS.map((url) => (
+            <TouchableOpacity
+              key={url}
+              style={[
+                styles.assetButton,
+                selectedRemoteUrl === url && styles.assetButtonActive,
+              ]}
+              onPress={() => setSelectedRemoteUrl(url)}
+            >
+              <Text
+                style={[
+                  styles.assetButtonText,
+                  selectedRemoteUrl === url && styles.assetButtonTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                {url.length > 30 ? `${url.substring(0, 30)}...` : url}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.assetInfo}>
+          <Asset name={selectedRemoteUrl} size={64} />
+          <View style={styles.infoText}>
+            <Text style={styles.infoLabel}>Remote URL:</Text>
+            <Text style={styles.infoValue} numberOfLines={2}>
+              {selectedRemoteUrl}
+            </Text>
+            <Text style={styles.infoLabel}>Is Remote:</Text>
+            <Text style={styles.infoValue}>
+              {isRemoteUrl(selectedRemoteUrl) ? 'Yes' : 'No'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.preloaderControls}>
+          <TouchableOpacity
+            style={[styles.button, isPreloadingRemote && styles.buttonDisabled]}
+            onPress={handlePreloadRemoteAssets}
+            disabled={isPreloadingRemote}
+          >
+            <Text style={styles.buttonText}>Preload Remote Assets</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressLabel}>Progress:</Text>
+          <Text style={styles.progressText}>
+            {remotePreloadProgress.loaded} / {remotePreloadProgress.total} (
+            {remotePreloadProgress.percentage}%)
+          </Text>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${remotePreloadProgress.percentage}%` },
+              ]}
+            />
+          </View>
+          {isPreloadingRemote && (
+            <Text style={styles.statusText}>Loading...</Text>
+          )}
+          {remotePreloadError && (
+            <Text style={styles.errorText}>
+              Error: {remotePreloadError.message}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.assetsGrid}>
+          {REMOTE_ASSET_URLS.map((url) => (
+            <View key={url} style={styles.assetCard}>
+              <Asset name={url} size={48} />
+              <Text style={styles.assetCardText} numberOfLines={2}>
+                Remote
+              </Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>All Assets</Text>
         <View style={styles.assetsGrid}>
           {Assets.getAllAssetNames().map((name) => (
@@ -164,6 +303,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   assetSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  remoteAssetSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
