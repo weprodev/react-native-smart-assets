@@ -62,6 +62,13 @@ export function generateAssetRegistry(
   };
 }
 
+function ensureRelativePathPrefix(filePath: string): string {
+  if (filePath.startsWith('./') || filePath.startsWith('../')) {
+    return filePath;
+  }
+  return `./${filePath}`;
+}
+
 function generateRegistryContent(
   assets: AssetMetadata[],
   _assetsDir: string,
@@ -81,7 +88,8 @@ function generateRegistryContent(
   const assetImports = assets.map((asset) => {
     const relativePath = getRelativePath(outputDir, asset.path);
     const normalizedPath = normalizePath(relativePath);
-    return `  '${asset.name}': require('${normalizedPath}'),`;
+    const requirePath = ensureRelativePathPrefix(normalizedPath);
+    return `  '${asset.name}': require('${requirePath}'),`;
   });
 
   const registryContent = `export const ASSETS = {\n${assetImports.join(

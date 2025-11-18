@@ -4,7 +4,9 @@ export { useAsset } from './hooks/useAsset';
 export { useAssetPreloader } from './hooks/useAssetPreloader';
 export {
   setAssetRegistry,
+  setAssetMetadata,
   getAsset,
+  getAssetMetadata,
   hasAsset,
   getAllAssetNames,
 } from './utils/assetRegistry';
@@ -29,6 +31,7 @@ export type {
   AssetVariant,
   AssetCategory,
   AssetMetadata,
+  AssetMetadataMap,
   AssetRegistry,
   AssetName,
   AssetSource,

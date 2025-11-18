@@ -1,7 +1,8 @@
 import React from 'react';
 import { Image as RNImage } from 'react-native';
 import type { ImageStyle, ImageSourcePropType } from 'react-native';
-import type { AssetProps, AssetSize, ImageProps } from '../types';
+import type { ComponentType } from 'react';
+import type { AssetProps, AssetSize, AssetSource, ImageProps } from '../types';
 import { getAsset, isSvgAsset } from '../utils/assetRegistry';
 import { SvgIcon } from './SvgIcon';
 import { isRemoteUrl, resolveRemoteAsset } from '../utils/remoteAssets';
@@ -14,6 +15,15 @@ try {
 }
 
 const Image = ExpoImage || RNImage;
+
+function isSvgComponent(source: AssetSource): source is ComponentType<{
+  width?: number;
+  height?: number;
+  fill?: string;
+  color?: string;
+}> {
+  return typeof source === 'function';
+}
 
 export function Asset<TAssetName extends string = string>({
   name,
@@ -58,16 +68,7 @@ export function Asset<TAssetName extends string = string>({
     return null;
   }
 
-  const sizeStyle = getSizeStyle(size);
-  const combinedStyle = [sizeStyle, style];
-
-  const isAssetWithUri =
-    typeof asset === 'object' &&
-    asset !== null &&
-    !Array.isArray(asset) &&
-    'uri' in asset;
-
-  if (isSvgAsset(name) || isAssetWithUri) {
+  if (isSvgAsset(name) || isSvgComponent(asset)) {
     const sizeValue =
       typeof size === 'number' ? size : size?.width || size?.height || 24;
     return (
@@ -81,6 +82,9 @@ export function Asset<TAssetName extends string = string>({
       />
     );
   }
+
+  const sizeStyle = getSizeStyle(size);
+  const combinedStyle = [sizeStyle, style];
 
   const imageProps: ImageProps = {
     source: asset as ImageSourcePropType,

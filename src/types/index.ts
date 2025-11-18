@@ -1,4 +1,5 @@
 import type { ImageStyle, StyleProp, ImageSourcePropType } from 'react-native';
+import type { ComponentType } from 'react';
 
 export type ImageResizeMode =
   | 'cover'
@@ -13,7 +14,16 @@ export type AssetVariant = 'default' | 'dark' | 'light';
 
 export type AssetCategory = 'images' | 'icons' | 'assets';
 
-export type AssetSource = ImageSourcePropType | string | { uri: string };
+export type AssetSource =
+  | ImageSourcePropType
+  | string
+  | { uri: string }
+  | ComponentType<{
+      width?: number;
+      height?: number;
+      fill?: string;
+      color?: string;
+    }>;
 
 export interface AssetProps<TAssetName extends string = string> {
   name: TAssetName;
@@ -37,6 +47,10 @@ export interface AssetMetadata {
 
 export interface AssetRegistry {
   [key: string]: AssetSource;
+}
+
+export interface AssetMetadataMap {
+  [key: string]: Omit<AssetMetadata, 'path'>;
 }
 
 export type AssetName = string;
