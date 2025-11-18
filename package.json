@@ -4,7 +4,9 @@
   "description": "A smart assets package to loads images and icons smartly",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
-  "bin": "./lib/module/cli/index.js",
+  "bin": {
+    "react-native-smart-assets": "./lib/module/cli/index.js"
+  },
   "exports": {
     ".": {
       "source": "./src/index.tsx",
