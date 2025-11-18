@@ -13,7 +13,7 @@ export const ASSETS = {
   'favicon': require('./favicon.png'),
   'icon': require('./icon.png'),
   'splash-icon': require('./splash-icon.png'),
-  'support': require('./support.svg'),
+  'support': require('./svg-components/support.tsx'),
 } as const;
 
 export const ASSET_METADATA = {
