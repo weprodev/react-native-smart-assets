@@ -1,4 +1,5 @@
 export { Asset } from './components/Asset';
+export { AssetPlaceholder } from './components/AssetPlaceholder';
 export { SvgIcon } from './components/SvgIcon';
 export { useAsset } from './hooks/useAsset';
 export { useAssetPreloader } from './hooks/useAssetPreloader';
@@ -31,6 +32,7 @@ export type {
   AssetSize,
   AssetVariant,
   AssetCategory,
+  AssetPlaceholderType,
   AssetMetadata,
   AssetMetadataMap,
   AssetRegistry,

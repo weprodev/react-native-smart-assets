@@ -6,17 +6,23 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  useColorScheme,
 } from 'react-native';
 import {
   setAssetRegistry,
   Asset,
   useAsset,
   useAssetPreloader,
+  useAssetTheme,
   preloadRemoteAsset,
   isRemoteUrl,
   resolveAssetVariant,
 } from '@weprodev/react-native-smart-assets';
-import type { AssetVariant } from '@weprodev/react-native-smart-assets';
+import type {
+  AssetVariant,
+  AssetPlaceholderType,
+  ColorScheme,
+} from '@weprodev/react-native-smart-assets';
 import * as Assets from '../assets';
 import type { AssetName } from '../assets';
 
@@ -432,8 +438,205 @@ export default function App() {
             ))}
           </View>
         </View>
+
+        <UseAssetThemeSection />
+        <AssetPlaceholderSection />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+// ─── useAssetTheme demo ───────────────────────────────────────────────────────
+
+function UseAssetThemeSection() {
+  const systemScheme = useColorScheme();
+  const [override, setOverride] = useState<ColorScheme | undefined>(undefined);
+
+  // Pick a real image asset so the result is visible
+  const result = useAssetTheme('favicon', { colorScheme: override });
+  // Also show the adaptive-icon variant (which doesn't have a -dark in registry
+  // so this exercises the graceful fallback path)
+  const noVariantResult = useAssetTheme('icon', { colorScheme: override });
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>useAssetTheme Hook</Text>
+      <Text style={styles.variantDescription}>
+        Automatically swaps to the <Text style={styles.mono}>-dark</Text> asset
+        variant when the system (or override) is in dark mode. Falls back
+        gracefully when the dark variant isn't registered.
+      </Text>
+
+      {/* System info */}
+      <View style={styles.themeInfoRow}>
+        <Text style={styles.infoLabel}>System scheme:</Text>
+        <View
+          style={[
+            styles.schemeBadge,
+            systemScheme === 'dark' ? styles.schemeDark : styles.schemeLight,
+          ]}
+        >
+          <Text style={styles.schemeBadgeText}>
+            {systemScheme ?? 'unknown'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Manual override buttons */}
+      <Text style={styles.variantLabel}>Force override:</Text>
+      <View style={styles.variantButtons}>
+        {([undefined, 'light', 'dark'] as const).map((scheme) => (
+          <TouchableOpacity
+            key={String(scheme)}
+            style={[
+              styles.variantButton,
+              override === scheme && styles.variantButtonActive,
+            ]}
+            onPress={() => setOverride(scheme)}
+          >
+            <Text
+              style={[
+                styles.variantButtonText,
+                override === scheme && styles.variantButtonTextActive,
+              ]}
+            >
+              {scheme === undefined ? 'system' : scheme}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Results table */}
+      <View style={styles.themeResultsTable}>
+        <AssetThemeRow label="favicon" result={result} />
+        <AssetThemeRow
+          label="icon"
+          result={noVariantResult}
+          note="no -dark registered → falls back"
+        />
+      </View>
+    </View>
+  );
+}
+
+function AssetThemeRow({
+  label,
+  result,
+  note,
+}: {
+  label: string;
+  result: ReturnType<typeof useAssetTheme>;
+  note?: string;
+}) {
+  return (
+    <View style={styles.themeRow}>
+      <Asset name={result.name as any} size={40} />
+      <View style={styles.themeRowInfo}>
+        <Text style={styles.mono}>{label}</Text>
+        <Text style={styles.themeRowResolved}>
+          → <Text style={styles.mono}>{result.name}</Text>
+        </Text>
+        <Text style={styles.themeRowMeta}>
+          scheme: {result.colorScheme}
+          {'  '}| dark variant: {result.isDarkVariant ? '✓' : '✗'}
+        </Text>
+        {note && <Text style={styles.noteText}>{note}</Text>}
+      </View>
+    </View>
+  );
+}
+
+// ─── Asset placeholder demo ───────────────────────────────────────────────────
+
+const PLACEHOLDER_TYPES: AssetPlaceholderType[] = [
+  'shimmer',
+  'blur',
+  'color',
+  'none',
+];
+
+// A slow remote URL forces the placeholder to be visible long enough to see it
+const SLOW_REMOTE_URL = 'https://picsum.photos/300/200?random=99';
+
+function AssetPlaceholderSection() {
+  const [placeholderType, setPlaceholderType] =
+    useState<AssetPlaceholderType>('shimmer');
+  const [imageKey, setImageKey] = useState(0);
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Asset Placeholder / Skeleton</Text>
+      <Text style={styles.variantDescription}>
+        The <Text style={styles.mono}>placeholder</Text> prop shows a visual
+        skeleton while the image is loading. Tap{' '}
+        <Text style={styles.mono}>Reload</Text> to re-trigger the loading state.
+      </Text>
+
+      {/* Type selector */}
+      <Text style={styles.variantLabel}>Placeholder type:</Text>
+      <View style={[styles.variantButtons, { marginBottom: 20 }]}>
+        {PLACEHOLDER_TYPES.map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.variantButton,
+              placeholderType === type && styles.variantButtonActive,
+            ]}
+            onPress={() => setPlaceholderType(type)}
+          >
+            <Text
+              style={[
+                styles.variantButtonText,
+                placeholderType === type && styles.variantButtonTextActive,
+              ]}
+            >
+              {type}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Live demo — keyed so a new key forces a fresh image mount */}
+      <View style={styles.placeholderDemoRow}>
+        {/* Remote image (loading takes time → placeholder visible) */}
+        <View style={styles.placeholderDemoItem}>
+          <Text style={styles.placeholderDemoLabel}>Remote image</Text>
+          <Asset
+            key={`remote-${imageKey}-${placeholderType}`}
+            name={`${SLOW_REMOTE_URL}&bust=${imageKey}`}
+            size={{ width: 140, height: 100 }}
+            placeholder={placeholderType}
+            placeholderColor="#DDE3EC"
+          />
+        </View>
+
+        {/* Local image (loads near-instantly; compare with remote) */}
+        <View style={styles.placeholderDemoItem}>
+          <Text style={styles.placeholderDemoLabel}>Local image</Text>
+          <Asset
+            key={`local-${imageKey}-${placeholderType}`}
+            name="favicon"
+            size={{ width: 140, height: 100 }}
+            placeholder={placeholderType}
+            placeholderColor="#DDE3EC"
+          />
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.button, { marginTop: 12 }]}
+        onPress={() => setImageKey((k) => k + 1)}
+      >
+        <Text style={styles.buttonText}>↺ Reload images</Text>
+      </TouchableOpacity>
+
+      {/* Code snippet */}
+      <View style={styles.codeBlock}>
+        <Text style={styles.codeText}>
+          {`<Asset\n  name="images/hero"\n  size={{ width: 300, height: 200 }}\n  placeholder="${placeholderType}"\n  placeholderColor="#DDE3EC"\n/>`}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -705,5 +908,96 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 18,
     fontFamily: 'monospace',
+  },
+
+  // ── useAssetTheme styles ────────────────────────────────────────────────────
+  themeInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  schemeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  schemeLight: {
+    backgroundColor: '#FFF9C4',
+  },
+  schemeDark: {
+    backgroundColor: '#263238',
+  },
+  schemeBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  themeResultsTable: {
+    marginTop: 16,
+    gap: 12,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
+  },
+  themeRowInfo: {
+    flex: 1,
+  },
+  themeRowResolved: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 2,
+  },
+  themeRowMeta: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 4,
+  },
+  noteText: {
+    fontSize: 11,
+    color: '#FF9500',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  mono: {
+    fontFamily: 'monospace',
+    fontWeight: '600',
+    color: '#5C6BC0',
+  },
+
+  // ── placeholder styles ──────────────────────────────────────────────────────
+  placeholderDemoRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  placeholderDemoItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  placeholderDemoLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#555',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  codeBlock: {
+    marginTop: 16,
+    backgroundColor: '#1E1E2E',
+    borderRadius: 8,
+    padding: 14,
+  },
+  codeText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: '#CDD6F4',
+    lineHeight: 20,
   },
 });
