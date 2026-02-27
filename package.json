@@ -56,18 +56,26 @@
   "keywords": [
     "react-native",
     "ios",
-    "android"
+    "android",
+    "expo",
+    "assets",
+    "images",
+    "icons",
+    "image-optimization",
+    "expo-plugin",
+    "babel-plugin",
+    "smart-assets"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kurdev2020/react-native-smart-assets.git"
+    "url": "git+https://github.com/weprodev/react-native-smart-assets.git"
   },
   "author": "Amanj <kurdev.2020@gmail.com> (https://github.com/kurdev2020)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kurdev2020/react-native-smart-assets/issues"
+    "url": "https://github.com/weprodev/react-native-smart-assets/issues"
   },
-  "homepage": "https://github.com/kurdev2020/react-native-smart-assets#readme",
+  "homepage": "https://github.com/weprodev/react-native-smart-assets#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
