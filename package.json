@@ -1,6 +1,6 @@
 {
   "name": "@weprodev/react-native-smart-assets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A smart assets package to loads images and icons smartly",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
