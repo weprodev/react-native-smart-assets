@@ -14,8 +14,10 @@ A smart, type-safe asset management system for React Native that automatically g
 - 🌙 **Dark Mode**: `useAssetTheme` automatically switches between `-dark` / `-light` asset variants
 - �️ **Placeholders**: Shimmer, blur, and colour skeletons while images load
 - 🗜️ **CLI Optimize**: Compress PNG/JPEG assets and warn about oversized files
-- �🔍 **CLI Tools**: Generate, validate, and get statistics about your assets
+- 🔍 **CLI Tools**: Generate, validate, and get statistics about your assets
 - 👀 **Watch Mode**: Auto-regenerate types when assets change
+- ⚙️ **Expo Config Plugin**: Auto-run `generate` on every `expo prebuild` — no manual steps
+- 🔒 **Babel/Metro Plugin**: Catch asset-name typos as **build errors** with "did you mean?" suggestions
 
 ## Installation
 
@@ -452,6 +454,195 @@ module.exports = {
 };
 ```
 
+---
+
+## Expo Config Plugin
+
+Automatically regenerates the asset registry on every `expo prebuild` so you never forget to run `generate` after adding new assets.
+
+### Setup
+
+```js
+// app.config.js
+export default {
+  name: 'MyApp',
+  slug: 'my-app',
+  plugins: [
+    [
+      'react-native-smart-assets/plugin',
+      {
+        assetsDir: './src/assets', // where your raw assets live
+        outputDir: './src/assets', // where the generated index.ts is written
+      },
+    ],
+  ],
+};
+```
+
+TypeScript config (`app.config.ts`):
+
+```ts
+import type { ExpoConfig } from 'expo/config';
+import type { SmartAssetsPluginOptions } from 'react-native-smart-assets/plugin';
+
+const pluginOptions: SmartAssetsPluginOptions = {
+  assetsDir: './src/assets',
+  outputDir: './src/assets',
+};
+
+const config: ExpoConfig = {
+  name: 'MyApp',
+  slug: 'my-app',
+  plugins: [['react-native-smart-assets/plugin', pluginOptions]],
+};
+
+export default config;
+```
+
+### How it works
+
+Run prebuild as usual — generation happens automatically:
+
+```sh
+npx expo prebuild
+```
+
+You'll see this in the output:
+
+```
+[react-native-smart-assets] Running asset registry generation…
+  assetsDir : /your/project/src/assets
+  outputDir : /your/project/src/assets
+✓ [react-native-smart-assets] Registry generated — 12 asset(s)
+  Output: /your/project/src/assets/index.ts
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `assetsDir` | `string` | `'./assets'` | Directory containing your raw asset files |
+| `outputDir` | `string` | Same as `assetsDir` | Directory where the generated registry is written |
+| `format` | `'typescript' \| 'javascript'` | `'typescript'` | Output file format |
+| `failOnError` | `boolean` | `false` | `true` = hard-fail the build on errors (recommended for CI) |
+
+---
+
+## Babel / Metro Plugin — Compile-Time Validation
+
+Validates asset names at **build time** instead of runtime. Typos in `<Asset name="…" />` or `getAsset("…")` surface as build errors with helpful suggestions — before the app even launches.
+
+```tsx
+// ❌ Build error: Asset "icons/hom" not found.
+//    Did you mean "icons/home"?
+<Asset name="icons/hom" size={24} />
+
+// ✅ Fine
+<Asset name="icons/home" size={24} />
+```
+
+### Setup
+
+Add the plugin to your `babel.config.js`:
+
+```js
+// babel.config.js
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: [
+    [
+      'react-native-smart-assets/babel-plugin',
+      {
+        registryPath: './src/assets/index.ts', // path to generated registry
+        mode: 'error',                          // 'error' | 'warn' | 'off'
+      },
+    ],
+  ],
+};
+```
+
+After changing `babel.config.js` clear Metro's cache once:
+
+```sh
+npx expo start --clear
+# or
+npx react-native start --reset-cache
+```
+
+### What gets validated
+
+| Pattern | Example |
+|---|---|
+| JSX `name` prop | `<Asset name="icons/hom" />` |
+| `getAsset()` first argument | `getAsset('images/lgoo')` |
+| `hasAsset()` first argument | `hasAsset('icons/ghost')` |
+
+Dynamic values (e.g. `name={myVar}`) are silently skipped — only **string literals** are checked.
+
+### Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `registryPath` | `string` | `'./assets/index.ts'` | Path to the generated asset registry |
+| `mode` | `'error' \| 'warn' \| 'off'` | `'error'` | How to report unknown asset names |
+| `assetComponents` | `string[]` | `['Asset']` | JSX components whose `name` prop is validated |
+| `assetFunctions` | `string[]` | `['getAsset', 'hasAsset']` | Function calls whose first argument is validated |
+
+### Recommended mode per environment
+
+```js
+// babel.config.js
+const isDev = process.env.NODE_ENV === 'development';
+
+module.exports = {
+  presets: ['module:@react-native/babel-preset'],
+  plugins: [
+    [
+      'react-native-smart-assets/babel-plugin',
+      {
+        registryPath: './src/assets/index.ts',
+        mode: isDev ? 'warn' : 'error', // warn locally, hard-fail in CI
+      },
+    ],
+  ],
+};
+```
+
+### Custom component names
+
+```js
+plugins: [
+  ['react-native-smart-assets/babel-plugin', {
+    registryPath: './src/assets/index.ts',
+    mode: 'error',
+    assetComponents: ['Asset', 'AppIcon', 'SmartImage'],
+    assetFunctions:  ['getAsset', 'hasAsset', 'useAsset'],
+  }],
+],
+```
+
+---
+
+## Recommended Workflow
+
+```
+expo prebuild        ← Expo plugin auto-generates the registry
+      ↓
+Metro bundler starts ← Babel plugin reads the fresh registry
+      ↓
+<Asset name="typo"> ← caught immediately as a build error
+```
+
+For local development, you can also keep the file watcher running:
+
+```sh
+# Terminal 1 — regenerate registry whenever assets change
+npx react-native-smart-assets watch --assets-dir ./src/assets
+
+# Terminal 2 — normal Metro dev server
+npx expo start
+```
+
 ## Asset Variants
 
 ### Density Variants
@@ -598,6 +789,13 @@ The generated `assets/index.ts` file includes:
 - `ASSETS` constant with all asset imports
 - `ASSET_METADATA` with asset information
 - Helper functions for type-safe asset access
+
+### Plugin type exports
+
+```ts
+import type { SmartAssetsPluginOptions } from 'react-native-smart-assets/plugin';
+import type { BabelPluginOptions }       from 'react-native-smart-assets/babel-plugin';
+```
 
 ## Contributing
 
