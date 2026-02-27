@@ -1,4 +1,4 @@
-# react-native-smart-assets
+# @weprodev/react-native-smart-assets
 
 A smart, type-safe asset management system for React Native that automatically generates type definitions and provides a simple, intuitive API for loading images and SVG icons.
 
@@ -22,9 +22,9 @@ A smart, type-safe asset management system for React Native that automatically g
 ## Installation
 
 ```sh
-npm install react-native-smart-assets
+npm install @weprodev/react-native-smart-assets
 # or
-yarn add react-native-smart-assets
+yarn add @weprodev/react-native-smart-assets
 ```
 
 ## Quick Start
@@ -48,7 +48,7 @@ assets/
 Run the CLI tool to generate type-safe asset definitions:
 
 ```sh
-npx react-native-smart-assets generate
+npx @weprodev/react-native-smart-assets generate
 ```
 
 This creates an `assets/index.ts` file with all your assets registered and typed.
@@ -58,7 +58,7 @@ This creates an `assets/index.ts` file with all your assets registered and typed
 In your app entry point (e.g., `App.tsx` or `index.js`):
 
 ```tsx
-import { setAssetRegistry } from 'react-native-smart-assets';
+import { setAssetRegistry } from '@weprodev/react-native-smart-assets';
 import * as Assets from './assets';
 
 setAssetRegistry(Assets.ASSETS, Assets.ASSET_METADATA);
@@ -69,7 +69,7 @@ The `ASSET_METADATA` parameter is optional but recommended as it provides additi
 ### 4. Use the Asset Component
 
 ```tsx
-import { Asset } from 'react-native-smart-assets';
+import { Asset } from '@weprodev/react-native-smart-assets';
 
 function MyComponent() {
   return (
@@ -104,7 +104,7 @@ import {
   useAssetPreloader,
   preloadRemoteAsset,
   isRemoteUrl,
-} from 'react-native-smart-assets';
+} from '@weprodev/react-native-smart-assets';
 import * as Assets from './assets';
 import type { AssetName } from './assets';
 
@@ -232,7 +232,7 @@ The `<Asset />` component is the main way to render your assets:
 Use predefined size constants:
 
 ```tsx
-import { Asset, AssetSizes } from 'react-native-smart-assets';
+import { Asset, AssetSizes } from '@weprodev/react-native-smart-assets';
 
 <Asset name="icons/home" size={AssetSizes.medium} />
 <Asset name="icons/user" size={AssetSizes.large} />
@@ -256,7 +256,7 @@ Load remote images directly:
 Preload critical assets on app start:
 
 ```tsx
-import { useAssetPreloader } from 'react-native-smart-assets';
+import { useAssetPreloader } from '@weprodev/react-native-smart-assets';
 
 function App() {
   const { preload, progress, isLoading } = useAssetPreloader([
@@ -282,7 +282,7 @@ Automatically resolves the correct asset variant for the current system color sc
 Follows the existing `-dark` / `-light` filename convention with **zero manual logic**.
 
 ```tsx
-import { useAssetTheme } from 'react-native-smart-assets';
+import { useAssetTheme } from '@weprodev/react-native-smart-assets';
 
 function Logo() {
   // Returns 'images/logo-dark' in dark mode, 'images/logo' in light mode.
@@ -338,7 +338,7 @@ Swapping the `name` prop resets the loading state instantly.
 You can also use the standalone `<AssetPlaceholder />` component:
 
 ```tsx
-import { AssetPlaceholder } from 'react-native-smart-assets';
+import { AssetPlaceholder } from '@weprodev/react-native-smart-assets';
 
 <AssetPlaceholder type="shimmer" color="#DDE3EC" style={styles.skeleton} />
 ```
@@ -350,7 +350,7 @@ import { AssetPlaceholder } from 'react-native-smart-assets';
 Get asset information:
 
 ```tsx
-import { useAsset } from 'react-native-smart-assets';
+import { useAsset } from '@weprodev/react-native-smart-assets';
 
 function MyComponent() {
   const { asset, exists, isSvg } = useAsset('images/logo');
@@ -368,7 +368,7 @@ function MyComponent() {
 ### Generate Asset Registry
 
 ```sh
-npx react-native-smart-assets generate
+npx @weprodev/react-native-smart-assets generate
 ```
 
 Options:
@@ -379,7 +379,7 @@ Options:
 ### Validate Assets
 
 ```sh
-npx react-native-smart-assets validate
+npx @weprodev/react-native-smart-assets validate
 ```
 
 Checks for:
@@ -391,7 +391,7 @@ Checks for:
 ### Get Statistics
 
 ```sh
-npx react-native-smart-assets stats
+npx @weprodev/react-native-smart-assets stats
 ```
 
 Shows:
@@ -403,7 +403,7 @@ Shows:
 ### Watch Mode
 
 ```sh
-npx react-native-smart-assets watch
+npx @weprodev/react-native-smart-assets watch
 ```
 
 Automatically regenerates the asset registry when files change.
@@ -413,7 +413,7 @@ Automatically regenerates the asset registry when files change.
 Compress PNG and JPEG files directly from the CLI and warn about oversized assets:
 
 ```sh
-npx react-native-smart-assets optimize
+npx @weprodev/react-native-smart-assets optimize
 ```
 
 Example output:
@@ -469,7 +469,7 @@ export default {
   slug: 'my-app',
   plugins: [
     [
-      'react-native-smart-assets/plugin',
+      '@weprodev/react-native-smart-assets/plugin',
       {
         assetsDir: './src/assets', // where your raw assets live
         outputDir: './src/assets', // where the generated index.ts is written
@@ -483,7 +483,7 @@ TypeScript config (`app.config.ts`):
 
 ```ts
 import type { ExpoConfig } from 'expo/config';
-import type { SmartAssetsPluginOptions } from 'react-native-smart-assets/plugin';
+import type { SmartAssetsPluginOptions } from '@weprodev/react-native-smart-assets/plugin';
 
 const pluginOptions: SmartAssetsPluginOptions = {
   assetsDir: './src/assets',
@@ -493,7 +493,7 @@ const pluginOptions: SmartAssetsPluginOptions = {
 const config: ExpoConfig = {
   name: 'MyApp',
   slug: 'my-app',
-  plugins: [['react-native-smart-assets/plugin', pluginOptions]],
+  plugins: [['@weprodev/react-native-smart-assets/plugin', pluginOptions]],
 };
 
 export default config;
@@ -510,10 +510,10 @@ npx expo prebuild
 You'll see this in the output:
 
 ```
-[react-native-smart-assets] Running asset registry generation…
+[@weprodev/react-native-smart-assets] Running asset registry generation…
   assetsDir : /your/project/src/assets
   outputDir : /your/project/src/assets
-✓ [react-native-smart-assets] Registry generated — 12 asset(s)
+✓ [@weprodev/react-native-smart-assets] Registry generated — 12 asset(s)
   Output: /your/project/src/assets/index.ts
 ```
 
@@ -551,7 +551,7 @@ module.exports = {
   presets: ['module:@react-native/babel-preset'],
   plugins: [
     [
-      'react-native-smart-assets/babel-plugin',
+      '@weprodev/react-native-smart-assets/babel-plugin',
       {
         registryPath: './src/assets/index.ts', // path to generated registry
         mode: 'error',                          // 'error' | 'warn' | 'off'
@@ -598,7 +598,7 @@ module.exports = {
   presets: ['module:@react-native/babel-preset'],
   plugins: [
     [
-      'react-native-smart-assets/babel-plugin',
+      '@weprodev/react-native-smart-assets/babel-plugin',
       {
         registryPath: './src/assets/index.ts',
         mode: isDev ? 'warn' : 'error', // warn locally, hard-fail in CI
@@ -612,7 +612,7 @@ module.exports = {
 
 ```js
 plugins: [
-  ['react-native-smart-assets/babel-plugin', {
+  ['@weprodev/react-native-smart-assets/babel-plugin', {
     registryPath: './src/assets/index.ts',
     mode: 'error',
     assetComponents: ['Asset', 'AppIcon', 'SmartImage'],
@@ -637,7 +637,7 @@ For local development, you can also keep the file watcher running:
 
 ```sh
 # Terminal 1 — regenerate registry whenever assets change
-npx react-native-smart-assets watch --assets-dir ./src/assets
+npx @weprodev/react-native-smart-assets watch --assets-dir ./src/assets
 
 # Terminal 2 — normal Metro dev server
 npx expo start
@@ -793,8 +793,8 @@ The generated `assets/index.ts` file includes:
 ### Plugin type exports
 
 ```ts
-import type { SmartAssetsPluginOptions } from 'react-native-smart-assets/plugin';
-import type { BabelPluginOptions }       from 'react-native-smart-assets/babel-plugin';
+import type { SmartAssetsPluginOptions } from '@weprodev/react-native-smart-assets/plugin';
+import type { BabelPluginOptions }       from '@weprodev/react-native-smart-assets/babel-plugin';
 ```
 
 ## Contributing
