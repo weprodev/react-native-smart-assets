@@ -11,11 +11,23 @@
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./plugin": {
+      "source": "./src/plugin.ts",
+      "types": "./lib/typescript/src/plugin.d.ts",
+      "default": "./lib/module/plugin.js"
+    },
+    "./babel-plugin": {
+      "source": "./src/babel-plugin.ts",
+      "types": "./lib/typescript/src/babel-plugin.d.ts",
+      "default": "./lib/module/babel-plugin.js"
+    }
   },
   "files": [
     "src",
     "lib",
+    "plugin.js",
+    "babel-plugin.js",
     "android",
     "ios",
     "cpp",
