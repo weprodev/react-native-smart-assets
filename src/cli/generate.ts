@@ -360,7 +360,7 @@ function transformElementAttributes(
 
 function toPascalCase(str: string): string {
   return str
-    .split(/[-_\s\/]/)
+    .split(/[-_\s/]/)
     .filter((word) => word.length > 0)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join('');

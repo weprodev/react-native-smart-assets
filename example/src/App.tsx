@@ -104,7 +104,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -574,7 +574,7 @@ function AssetPlaceholderSection() {
 
       {/* Type selector */}
       <Text style={styles.variantLabel}>Placeholder type:</Text>
-      <View style={[styles.variantButtons, { marginBottom: 20 }]}>
+      <View style={[styles.variantButtons, styles.placeholderTypeButtons]}>
         {PLACEHOLDER_TYPES.map((type) => (
           <TouchableOpacity
             key={type}
@@ -624,7 +624,7 @@ function AssetPlaceholderSection() {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, { marginTop: 12 }]}
+        style={[styles.button, styles.reloadButton]}
         onPress={() => setImageKey((k) => k + 1)}
       >
         <Text style={styles.buttonText}>↺ Reload images</Text>
@@ -999,5 +999,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#CDD6F4',
     lineHeight: 20,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  placeholderTypeButtons: {
+    marginBottom: 20,
+  },
+  reloadButton: {
+    marginTop: 12,
   },
 });
