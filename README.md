@@ -11,7 +11,10 @@ A smart, type-safe asset management system for React Native that automatically g
 - 🔄 **Variants**: Support for density variants (@2x, @3x), dark mode, and platform-specific assets
 - 🌐 **Remote Assets**: Load remote images with caching and fallback support
 - ⚡ **Preloading**: Preload critical assets with progress tracking
-- 🔍 **CLI Tools**: Generate, validate, and get statistics about your assets
+- 🌙 **Dark Mode**: `useAssetTheme` automatically switches between `-dark` / `-light` asset variants
+- �️ **Placeholders**: Shimmer, blur, and colour skeletons while images load
+- 🗜️ **CLI Optimize**: Compress PNG/JPEG assets and warn about oversized files
+- �🔍 **CLI Tools**: Generate, validate, and get statistics about your assets
 - 👀 **Watch Mode**: Auto-regenerate types when assets change
 
 ## Installation
@@ -271,6 +274,73 @@ function App() {
 }
 ```
 
+### Dark Mode Assets — `useAssetTheme`
+
+Automatically resolves the correct asset variant for the current system color scheme.
+Follows the existing `-dark` / `-light` filename convention with **zero manual logic**.
+
+```tsx
+import { useAssetTheme } from 'react-native-smart-assets';
+
+function Logo() {
+  // Returns 'images/logo-dark' in dark mode, 'images/logo' in light mode.
+  // Falls back to 'images/logo' gracefully if the -dark variant isn't registered.
+  const { name } = useAssetTheme('images/logo');
+  return <Asset name={name} size={100} />;
+}
+```
+
+**Options:**
+
+```tsx
+const { name, colorScheme, isDarkVariant } = useAssetTheme('images/logo', {
+  darkSuffix: '-dark',   // default — suffix appended in dark mode
+  lightSuffix: '-light', // optional — also switch the asset in light mode
+  colorScheme: 'dark',   // optional — force a scheme (e.g. Storybook)
+});
+```
+
+| Return value | Type | Description |
+|---|---|---|
+| `name` | `string` | Resolved asset name to pass to `<Asset />` |
+| `colorScheme` | `'light' \| 'dark'` | Currently active scheme |
+| `isDarkVariant` | `boolean` | Whether the dark variant was found and used |
+| `isLightVariant` | `boolean` | Whether the light variant was found and used |
+
+> **Tip:** When the themed variant does not exist in the registry the hook
+> silently falls back to the base name, so `<Asset />` shows its own warning.
+
+### Asset Placeholders / Skeletons
+
+Show a visual skeleton while an image loads. No effect on SVG assets.
+
+```tsx
+<Asset
+  name="images/hero"
+  size={{ width: 300, height: 200 }}
+  placeholder="shimmer"        // 'shimmer' | 'blur' | 'color' | 'none'
+  placeholderColor="#DDE3EC"  // optional base color (default: '#E0E0E0')
+/>
+```
+
+| Placeholder | Description |
+|---|---|
+| `shimmer` | Animated bright-band sweep — classic skeleton loading look |
+| `blur` | Soft pulsing opacity — suggests hazy content beneath |
+| `color` | Static flat background — zero animation overhead |
+| `none` | No placeholder (default, preserves existing behaviour) |
+
+The placeholder disappears automatically once `onLoad` or `onError` fires.
+Swapping the `name` prop resets the loading state instantly.
+
+You can also use the standalone `<AssetPlaceholder />` component:
+
+```tsx
+import { AssetPlaceholder } from 'react-native-smart-assets';
+
+<AssetPlaceholder type="shimmer" color="#DDE3EC" style={styles.skeleton} />
+```
+
 ### Hooks
 
 #### `useAsset(name: string)`
@@ -336,6 +406,40 @@ npx react-native-smart-assets watch
 
 Automatically regenerates the asset registry when files change.
 
+### Optimize Assets
+
+Compress PNG and JPEG files directly from the CLI and warn about oversized assets:
+
+```sh
+npx react-native-smart-assets optimize
+```
+
+Example output:
+
+```
+✓ Compressed icons/logo.png:        240KB → 48KB  (-80%)
+✓ Compressed images/background.jpg: 1.2MB → 310KB (-74%)
+⚠  images/hero.jpg is 2.4MB after compression — recommended max is 512KB
+
+Saved 1.4MB across 2 file(s)
+```
+
+Options:
+- `--quality <0-100>`: JPEG / PNG quality (default: `80`)
+- `--max-size <bytes>`: Warn when an asset exceeds this size (default: `524288` = 512 KB)
+- `--dry-run`: Preview savings without writing any files
+- `--assets-dir <path>`: Custom assets directory (default: `assets`)
+
+> **Note:** Real compression requires [`sharp`](https://sharp.pixelplumbing.com/).
+> Without it the command still runs in **analysis-only** mode and reports
+> oversized assets, so it's always safe to run in CI:
+>
+> ```sh
+> npm install --save-dev sharp
+> # or
+> yarn add --dev sharp
+> ```
+
 ## Configuration
 
 Create an `assets.config.js` file in your project root:
@@ -390,13 +494,31 @@ assets/
 Main component for rendering assets.
 
 **Props:**
-- `name: string` - Asset name (type-safe from generated types)
-- `size?: number | { width: number; height: number }` - Asset size
-- `style?: StyleProp<ImageStyle>` - Additional styles
-- `tintColor?: string` - Tint color (for SVG icons)
-- `resizeMode?: ImageResizeMode` - Image resize mode
-- `variant?: 'default' | 'dark' | 'light'` - Asset variant
-- `testID?: string` - Test identifier
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `name` | `string` | — | Asset name (type-safe from generated types) |
+| `size` | `number \| { width, height }` | — | Asset dimensions |
+| `style` | `StyleProp<ImageStyle>` | — | Additional styles |
+| `tintColor` | `string` | — | Tint color (SVG only) |
+| `resizeMode` | `ImageResizeMode` | `'contain'` | Image resize mode |
+| `variant` | `'default' \| 'dark' \| 'light'` | `'default'` | Asset variant |
+| `placeholder` | `'shimmer' \| 'blur' \| 'color' \| 'none'` | `'none'` | Loading placeholder style |
+| `placeholderColor` | `string` | `'#E0E0E0'` | Placeholder base color |
+| `testID` | `string` | — | Test identifier |
+
+#### `AssetPlaceholder`
+
+Standalone skeleton component, useful when you need a placeholder outside of `<Asset />`.
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `type` | `'shimmer' \| 'blur' \| 'color' \| 'none'` | — | Visual style |
+| `color` | `string` | `'#E0E0E0'` | Base color |
+| `style` | `ViewStyle` | — | Additional styles |
+| `testID` | `string` | — | Test identifier |
 
 ### Hooks
 
@@ -405,9 +527,24 @@ Main component for rendering assets.
 Returns asset information.
 
 **Returns:**
-- `asset: any` - The asset object
-- `exists: boolean` - Whether the asset exists
-- `isSvg: boolean` - Whether the asset is an SVG
+- `asset: any` — The raw asset object
+- `exists: boolean` — Whether the asset is registered
+- `isSvg: boolean` — Whether the asset is an SVG
+
+#### `useAssetTheme(baseName: string, options?)`
+
+Resolves the correct asset variant for the current system color scheme.
+
+**Options:**
+- `colorScheme?: 'light' | 'dark'` — Override the detected scheme
+- `darkSuffix?: string` — Suffix for dark variants (default: `'-dark'`)
+- `lightSuffix?: string` — Suffix for light variants (default: `undefined`)
+
+**Returns:**
+- `name: string` — Resolved asset name (ready to pass to `<Asset />`)
+- `colorScheme: 'light' | 'dark'` — Currently active scheme
+- `isDarkVariant: boolean` — Whether the dark variant was resolved
+- `isLightVariant: boolean` — Whether the light variant was resolved
 
 #### `useAssetPreloader(assetNames?: string[])`
 

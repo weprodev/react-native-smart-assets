@@ -7,6 +7,12 @@ export interface CliOptions {
   watch?: boolean;
   format?: 'typescript' | 'javascript';
   configFile?: string;
+  /** JPEG quality 0–100 for the `optimize` command. */
+  quality?: number;
+  /** Byte threshold for oversized warnings in the `optimize` command. */
+  maxSize?: number;
+  /** When true, `optimize` reports what would happen without writing files. */
+  dryRun?: boolean;
 }
 
 export function resolvePath(
