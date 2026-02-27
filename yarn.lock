@@ -4260,10 +4260,13 @@ __metadata:
     release-it: "npm:^19.0.4"
     typescript: "npm:^5.9.2"
   peerDependencies:
+    "@expo/config-plugins": ">=7.0.0"
     expo-image: ^1.0.0
     react: "*"
     react-native: "*"
   peerDependenciesMeta:
+    "@expo/config-plugins":
+      optional: true
     expo-image:
       optional: true
   bin:
