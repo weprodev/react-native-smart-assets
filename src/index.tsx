@@ -2,6 +2,7 @@ export { Asset } from './components/Asset';
 export { SvgIcon } from './components/SvgIcon';
 export { useAsset } from './hooks/useAsset';
 export { useAssetPreloader } from './hooks/useAssetPreloader';
+export { useAssetTheme } from './hooks/useAssetTheme';
 export {
   setAssetRegistry,
   setAssetMetadata,
@@ -44,3 +45,8 @@ export type {
   PreloadProgress,
   UseAssetPreloaderResult,
 } from './hooks/useAssetPreloader';
+export type {
+  ColorScheme,
+  UseAssetThemeOptions,
+  UseAssetThemeResult,
+} from './hooks/useAssetTheme';
