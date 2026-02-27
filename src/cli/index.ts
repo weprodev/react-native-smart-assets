@@ -4,6 +4,7 @@ import * as path from 'path';
 import { generateAssetRegistry } from './generate';
 import { scanAssetsDirectory } from './scanner';
 import { validateAssets } from './validator';
+import { runOptimize, formatBytes, formatSavings } from './optimize';
 import type { CliOptions } from './utils';
 import {
   resolvePath,
@@ -34,6 +35,12 @@ function parseArgs(): { command: string; options: CliOptions } {
       options.format = args[++i] as 'typescript' | 'javascript';
     } else if (arg === '--config' && args[i + 1]) {
       options.configFile = args[++i];
+    } else if (arg === '--quality' && args[i + 1]) {
+      options.quality = parseInt(args[++i] as string, 10);
+    } else if (arg === '--max-size' && args[i + 1]) {
+      options.maxSize = parseInt(args[++i] as string, 10);
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
     }
   }
 
@@ -179,6 +186,112 @@ async function runStatsCommand(options: CliOptions): Promise<void> {
   }
 }
 
+async function runOptimizeCommand(options: CliOptions): Promise<void> {
+  const config = loadConfig(options.configFile);
+  const mergedOptions = { ...config, ...options };
+
+  const assetsDir = mergedOptions.assetsDir || DEFAULT_ASSETS_DIR;
+  const resolvedAssetsDir = resolvePath(assetsDir);
+
+  if (!directoryExists(resolvedAssetsDir)) {
+    console.error(`Assets directory does not exist: ${resolvedAssetsDir}`);
+    process.exit(1);
+  }
+
+  const quality = mergedOptions.quality;
+  const maxSize = mergedOptions.maxSize;
+  const dryRun = mergedOptions.dryRun ?? false;
+
+  if (quality !== undefined && (quality < 0 || quality > 100)) {
+    console.error('--quality must be between 0 and 100');
+    process.exit(1);
+  }
+
+  console.log(`Scanning assets in: ${resolvedAssetsDir}`);
+  if (dryRun) console.log('(dry-run mode — no files will be modified)\n');
+
+  const result = await runOptimize({
+    assetsDir: resolvedAssetsDir,
+    quality,
+    maxSize,
+    dryRun,
+  });
+
+  if (!result.sharpAvailable) {
+    console.warn(
+      '⚠  sharp is not installed — running in analysis-only mode.\n' +
+        '   Install it to enable real compression:\n' +
+        '   npm install --save-dev sharp\n'
+    );
+  }
+
+  // ── Per-file output
+  let hadOutput = false;
+  for (const file of result.files) {
+    if (file.error) {
+      console.error(`✖ ${file.label}: ${file.error}`);
+      hadOutput = true;
+      continue;
+    }
+
+    if (file.analysisOnly) {
+      if (file.oversized) {
+        const label = formatBytes(file.originalSize);
+        const maxLabel = formatBytes(maxSize ?? 512 * 1024);
+        console.warn(
+          `⚠  ${file.label} is ${label} — recommended max is ${maxLabel}`
+        );
+        hadOutput = true;
+      }
+      continue;
+    }
+
+    if (file.compressed) {
+      const from = formatBytes(file.originalSize);
+      const to = formatBytes(file.compressedSize);
+      const savings = formatSavings(file.originalSize, file.compressedSize);
+      const prefix = dryRun ? '[dry-run] would compress' : '✓ Compressed';
+      console.log(`${prefix} ${file.label}: ${from} → ${to}  (${savings})`);
+      hadOutput = true;
+    }
+
+    if (file.oversized) {
+      const label = formatBytes(file.compressedSize);
+      const maxLabel = formatBytes(maxSize ?? 512 * 1024);
+      console.warn(
+        `⚠  ${file.label} is ${label} after compression — recommended max is ${maxLabel}`
+      );
+      hadOutput = true;
+    }
+  }
+
+  if (!hadOutput && result.files.length > 0) {
+    console.log('✓ All assets are already optimally compressed');
+  } else if (result.files.length === 0) {
+    console.log('No compressible assets found (PNG/JPEG)');
+  }
+
+  // ── Summary
+  console.log('');
+  if (result.sharpAvailable && result.compressedCount > 0) {
+    const verb = dryRun ? 'Would save' : 'Saved';
+    console.log(
+      `${verb} ${formatBytes(result.bytesSaved)} across ${
+        result.compressedCount
+      } file(s)`
+    );
+  }
+  if (result.warnCount > 0) {
+    console.warn(
+      `⚠  ${result.warnCount} file(s) exceed the recommended size limit`
+    );
+  }
+  if (result.errorCount > 0) {
+    console.error(`✖ ${result.errorCount} file(s) failed to process`);
+    process.exit(1);
+  }
+}
+
 async function runWatchCommand(options: CliOptions): Promise<void> {
   const config = loadConfig(options.configFile);
   const mergedOptions = { ...config, ...options };
@@ -248,9 +361,14 @@ async function main(): Promise<void> {
       case 'watch':
         await runWatchCommand(options);
         break;
+      case 'optimize':
+        await runOptimizeCommand(options);
+        break;
       default:
         console.error(`Unknown command: ${command}`);
-        console.log('Available commands: generate, validate, stats, watch');
+        console.log(
+          'Available commands: generate, validate, stats, watch, optimize'
+        );
         process.exit(1);
     }
   } catch (error) {
