@@ -42,7 +42,8 @@ function ShimmerEffect({ color }: { color: string }) {
     <View
       style={[
         StyleSheet.absoluteFill,
-        { backgroundColor: color, overflow: 'hidden' },
+        styles.overflow,
+        { backgroundColor: color },
       ]}
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
     >
@@ -105,7 +106,7 @@ export function AssetPlaceholder({
   if (type === 'shimmer') {
     return (
       <View
-        style={[StyleSheet.absoluteFill, style, { overflow: 'hidden' }]}
+        style={[StyleSheet.absoluteFill, styles.overflow, style]}
         testID={testID}
         pointerEvents="none"
       >
@@ -117,7 +118,7 @@ export function AssetPlaceholder({
   if (type === 'blur') {
     return (
       <View
-        style={[StyleSheet.absoluteFill, style, { overflow: 'hidden' }]}
+        style={[StyleSheet.absoluteFill, styles.overflow, style]}
         testID={testID}
         pointerEvents="none"
       >
@@ -139,6 +140,9 @@ export function AssetPlaceholder({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  overflow: {
+    overflow: 'hidden',
+  },
   shimmerHighlight: {
     position: 'absolute',
     top: 0,

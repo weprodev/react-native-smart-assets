@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-smart-assets": ["./src/index"]
+      "@weprodev/react-native-smart-assets": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
