@@ -77,7 +77,6 @@ type SharpFn = (input: Buffer) => SharpInstance;
 
 function tryLoadSharp(): SharpFn | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('sharp') as SharpFn;
   } catch {
     return null;
