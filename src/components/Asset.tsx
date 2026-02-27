@@ -1,11 +1,12 @@
-import React from 'react';
-import { Image as RNImage } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { Image as RNImage, StyleSheet, View } from 'react-native';
 import type { ImageStyle, ImageSourcePropType } from 'react-native';
 import type { ComponentType } from 'react';
 import type { AssetProps, AssetSize, AssetSource, ImageProps } from '../types';
 import { getAsset, isSvgAsset } from '../utils/assetRegistry';
 import { SvgIcon } from './SvgIcon';
 import { isRemoteUrl, resolveRemoteAsset } from '../utils/remoteAssets';
+import { AssetPlaceholder } from './AssetPlaceholder';
 
 let ExpoImage: typeof RNImage | null = null;
 try {
@@ -33,18 +34,61 @@ export function Asset<TAssetName extends string = string>({
   color,
   resizeMode = 'contain',
   testID,
+  placeholder,
+  placeholderColor = '#E0E0E0',
 }: AssetProps<TAssetName>): React.ReactElement | null {
+  // Track which asset name has finished loading.
+  // Using `loadedName` (instead of a bool + useEffect) means we get an instant
+  // reset whenever `name` changes — no extra render cycles required.
+  const [loadedName, setLoadedName] = useState<string | null>(null);
+
+  const handleLoad = useCallback(() => setLoadedName(name), [name]);
+  const handleError = useCallback(() => setLoadedName(name), [name]);
+
+  // Whether the placeholder should be visible right now
+  const showPlaceholder =
+    !!placeholder && placeholder !== 'none' && loadedName !== name;
+
+  // ─── Remote URL ─────────────────────────────────────────────────────────────
+
   if (isRemoteUrl(name)) {
     const { uri, fallback } = resolveRemoteAsset({
       url: name,
       fallback: undefined,
     });
     const sizeStyle = getSizeStyle(size);
-    const combinedStyle = [sizeStyle, style];
+
+    if (showPlaceholder) {
+      return (
+        <View style={[sizeStyle, styles.container, style]}>
+          <Image
+            source={{ uri }}
+            style={StyleSheet.absoluteFill}
+            resizeMode={resizeMode}
+            onLoad={handleLoad}
+            onError={handleError}
+            testID={testID}
+            {...(ExpoImage
+              ? {
+                  cachePolicy: 'memory-disk' as const,
+                  ...(fallback && { placeholder: fallback }),
+                }
+              : fallback
+              ? { defaultSource: fallback }
+              : {})}
+          />
+          <AssetPlaceholder
+            type={placeholder}
+            color={placeholderColor}
+            testID={testID ? `${testID}-placeholder` : undefined}
+          />
+        </View>
+      );
+    }
 
     const imageProps: ImageProps = {
       source: { uri },
-      style: combinedStyle,
+      style: [sizeStyle, style],
       resizeMode: resizeMode,
       testID: testID,
       ...(ExpoImage
@@ -60,6 +104,8 @@ export function Asset<TAssetName extends string = string>({
     return <Image {...imageProps} />;
   }
 
+  // ─── Registry asset ─────────────────────────────────────────────────────────
+
   const asset = getAsset(name);
 
   if (!asset) {
@@ -68,6 +114,8 @@ export function Asset<TAssetName extends string = string>({
     }
     return null;
   }
+
+  // ─── SVG — no loading state needed (synchronous render) ─────────────────────
 
   if (isSvgAsset(name) || isSvgComponent(asset)) {
     const sizeValue =
@@ -85,12 +133,34 @@ export function Asset<TAssetName extends string = string>({
     );
   }
 
+  // ─── Raster image ────────────────────────────────────────────────────────────
+
   const sizeStyle = getSizeStyle(size);
-  const combinedStyle = [sizeStyle, style];
+
+  if (showPlaceholder) {
+    return (
+      <View style={[sizeStyle, styles.container, style]}>
+        <Image
+          source={asset as ImageSourcePropType}
+          style={StyleSheet.absoluteFill}
+          resizeMode={resizeMode}
+          onLoad={handleLoad}
+          onError={handleError}
+          testID={testID}
+          {...(ExpoImage && { cachePolicy: 'memory-disk' as const })}
+        />
+        <AssetPlaceholder
+          type={placeholder}
+          color={placeholderColor}
+          testID={testID ? `${testID}-placeholder` : undefined}
+        />
+      </View>
+    );
+  }
 
   const imageProps: ImageProps = {
     source: asset as ImageSourcePropType,
-    style: combinedStyle,
+    style: [sizeStyle, style],
     resizeMode: resizeMode,
     testID: testID,
     ...(ExpoImage && { cachePolicy: 'memory-disk' as const }),
@@ -98,6 +168,8 @@ export function Asset<TAssetName extends string = string>({
 
   return <Image {...imageProps} />;
 }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getSizeStyle(size?: AssetSize): ImageStyle {
   if (!size) {
@@ -116,3 +188,11 @@ function getSizeStyle(size?: AssetSize): ImageStyle {
     height: size.height,
   };
 }
+
+const styles = StyleSheet.create({
+  container: {
+    // Needed so the absolutely-positioned placeholder fills exactly the
+    // same bounding box as the image beneath it.
+    overflow: 'hidden',
+  },
+});
